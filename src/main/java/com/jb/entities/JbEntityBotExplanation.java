@@ -22,7 +22,7 @@ public class JbEntityBotExplanation implements CcpEntityConfigurator {
 	public static enum Fields implements CcpJsonFieldName{
 		@CcpEntityFieldPrimaryKey
 		@CcpJsonFieldTypeString
-		bot, 
+		botName, 
 		@CcpEntityFieldPrimaryKey
 		@CcpJsonFieldTypeString
 		language,

@@ -1,10 +1,14 @@
 package com.jb.business.bots.engine;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import com.ccp.business.CcpBusiness;
@@ -15,9 +19,11 @@ import com.ccp.decorators.CcpStringDecorator;
 import com.ccp.dependency.injection.CcpDependencyInjection;
 import com.ccp.especifications.db.crud.CcpCrud;
 import com.ccp.especifications.db.crud.CcpSelectUnionAll;
+import com.ccp.especifications.db.utils.entity.CcpEntity;
+import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityMetaData;
 import com.ccp.especifications.instant.messenger.CcpInstantMessenger;
 import com.ccp.flow.CcpErrorFlowDisturb;
-import com.ccp.process.CcpProcessStatusDefault;
+import com.ccp.json.validations.global.engine.CcpJsonValidationError;
 import com.jb.entities.JbEntityBot;
 import com.jb.entities.JbEntityBotCommand;
 import com.jb.entities.JbEntityBotCommandExplanation;
@@ -33,255 +39,45 @@ import com.jn.utils.JnSystemProperties;
 
 public class JbBotEngine {
 	
-	public static final JbBotEngine INSTANCE = new JbBotEngine();
+	private static final JbBotEngine INSTANCE = new JbBotEngine();
 	
-	public static enum Fields implements CcpJsonFieldName{
-		bots, token, botType, replyTo, language, stepName, status
-	}
-	public static class Bot{
-		public final BotType type;
-		public final Set<BotCommand> commands;
-		public final Map<String, String> explanations;
-
-		public Bot(BotType type, List<BotCommand> botCommands, CcpSelectUnionAll resultFromSearchBots) {
-			this.explanations = null;//FIXME
-			this.commands = null;//FIXME
-			this.type = type;
-		}
-		
-		public String toString() {
-			return this.type.name();
-		}
-	}
 	
-	public static class BotCommand implements CcpBusiness{
-		
-		public final String name;	
-		public final Map<String, String> names;
-		public final Map<String, String> explanations;
-		
-		public BotCommand(String name, CcpSelectUnionAll result) {
+	private final Map<String, Bot> allBots;
 
-			this.explanations = this.getExplanations(name, result);
-			this.names = this.getNames(name, result);
-			this.name = name;
-		
-		}
+	private final Map<String, BotCommand> allCommands;
 
-		private Map<String, String> getExplanations(String name, CcpSelectUnionAll result) {
-			List<CcpJsonRepresentation> entityRows = result.getEntityRows(JbEntityBotCommandExplanation.ENTITY);
-			List<CcpJsonRepresentation> collect = entityRows.stream().filter(x -> x.getAsString(JbEntityBotCommandExplanation.Fields.commandName).equals(name)).collect(Collectors.toList());
-			Map<String, String> response = new HashMap<>();
-			for (CcpJsonRepresentation json : collect) {
-				String language = json.getAsString(JbEntityBotCommandExplanation.Fields.language);
-				String message = json.getAsString(JbEntityBotCommandExplanation.Fields.message);
-				response.put(language, message);
-			}
-			return response;
-		}
-		
-		private Map<String, String> getNames(String name, CcpSelectUnionAll result) {
-			List<CcpJsonRepresentation> entityRows = result.getEntityRows(JbEntityBotCommandName.ENTITY);
-			List<CcpJsonRepresentation> collect = entityRows.stream().filter(x -> x.getAsString(JbEntityBotCommandName.Fields.commandName).equals(name)).collect(Collectors.toList());
-			Map<String, String> response = new HashMap<>();
-			for (CcpJsonRepresentation json : collect) {
-				String language = json.getAsString(JbEntityBotCommandName.Fields.language);
-				String message = json.getAsString(JbEntityBotCommandName.Fields.message);
-				response.put(language, message);
-			}
-			return response;
-		}
-
-		public boolean equals(Object obj) {
-			try {
-				boolean equals = ((BotCommand)obj).name.equals(this.name);
-				return equals;
-			} catch (Exception e) {
-				return false;
-			}
-		}
-		
-		public int hashCode() {
-			int hashCode = this.name.hashCode();
-			return hashCode;
-		}
-		
-		public String toString() {
-			return this.name;
-		}
-
-		private String getStepName(CcpJsonRepresentation json) {
-			{
-				String stepName = json.getAsString(Fields.stepName);
-				
-				boolean hasCurrentStep = false == stepName.trim().isEmpty();
-				
-				if(hasCurrentStep) {
-					return stepName;
-				}	
-			}
-			
-			CcpJsonRepresentation oneById = JbEntityBotCommandStepSession.ENTITY.getEntityDetails().getOneByIdOrHandleItIfThisIdWasNotFound(json, CcpOtherConstants.RETURNS_EMPTY_JSON);
-			String stepName = oneById.getAsString(JbEntityBotCommandStepSession.Fields.stepName);
-			
-			boolean hasCurrentStep = false == stepName.trim().isEmpty();
-			
-			if(hasCurrentStep) {
-				return stepName;
-			}
-			return this.name;
-		} 	
-		
-		
-		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
-
-			String stepName = this.getStepName(json);
-			
-			BotCommandStep botCommandStep = JbBotEngine.INSTANCE.allSteps.get(stepName);
-			
-			CcpJsonRepresentation apply = botCommandStep.apply(json);
-
-			return apply;
-		}
-	}
-	public static class BotCommandStep implements CcpBusiness{
-
-		public final String name;
-		public final CcpBusiness engine;
-		public final Map<Integer, String> nextSteps;
-		public final Map<String, String> explanations;
-		public final Map<String, String> startMessages;
-		public final Map<Integer, Map<String, String>> endMessages;
-		
-		public BotCommandStep(String name, String engine, Map<Integer, String> nextSteps, Map<String, String> startMessages, Map<String, String> explanations, Map<Integer, Map<String, String>> endMessages) {
-
-			this.name = name;
-			this.nextSteps = nextSteps;
-			this.endMessages = endMessages;
-			this.explanations = explanations;
-			this.startMessages = startMessages;
-			this.engine = new CcpStringDecorator(engine).reflection().newInstance();
-		}
-
-		public boolean equals(Object obj) {
-			try {
-				boolean equals = ((BotCommand)obj).name.equals(this.name);
-				return equals;
-			} catch (Exception e) {
-				return false;
-			}
-		}
-		
-		public int hashCode() {
-			int hashCode = this.name.hashCode();
-			return hashCode;
-		}
-		
-		public String toString() {
-			return this.name;
-		}
-
-		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
-			
-			try {
-				json = this.sendMessage(json, this.startMessages);
-				CcpJsonRepresentation apply = this.engine.apply(json);
-				JbEntityBotCommandStepSession.ENTITY.delete(json);
-				return apply;
-			} catch (CcpErrorFlowDisturb e) {
-				
-				boolean wrongValue = CcpProcessStatusDefault.UNPROCESSABLE_ENTITY.equals(e.status);
-				
-				if(wrongValue) {
-					json = this.sendMessage(e.json, this.explanations);
-					return json;
-				}
-				
-				int status = e.status.asNumber();
-				boolean hasEndMessage = this.endMessages.containsKey(status);
-				
-				if(hasEndMessage) {
-					Map<String, String> messages = this.endMessages.get(status);
-					json = this.sendMessage(e.json, messages);
-				}
-				
-				
-				boolean stepNotForeseen = false == this.nextSteps.containsKey(status);
-				
-				if(stepNotForeseen) {
-					JbEntityBotCommandStepSession.ENTITY.delete(json);
-					return e.json;
-				}
-
-				String nextStep = this.nextSteps.get(status);
-				CcpJsonRepresentation newJson = e.json.put(JbEntityBotCommandStepSession.Fields.stepName, nextStep);
-				JbEntityBotCommandStepSession.ENTITY.save(newJson);
-				return newJson;
-			
-			}
-		}
-
-		private CcpJsonRepresentation sendMessage(CcpJsonRepresentation json, Map<String, String> map) {
-			
-			String language = json.getAsString(Fields.language);
-			boolean hasNotMessage = false == map.containsKey(language);
-
-			if(hasNotMessage) {
-				return json;
-			}
-			
-			JnSystemProperties systemProperties = new JnSystemProperties();
-			CcpInstantMessenger instantMessenger = CcpDependencyInjection.getDependency(CcpInstantMessenger.class);
-			String botType = json.getAsString(Fields.botType);
-			BotType botTypeValue = BotType.valueOf(botType);
-			String botToken = systemProperties.getSystemInnerProperty(Fields.bots, botTypeValue, Fields.token) ;
-			Long chatId = json.getAsLongNumber(JbEntityBotCommandStepSession.Fields.chatId);
-			Long replyTo = json.getAsLongNumber(Fields.replyTo);
-			
-			String message = map.get(language);
-			CcpJsonRepresentation sendTextMessage = instantMessenger.sendTextMessage(botToken, chatId, replyTo, message);
-			CcpJsonRepresentation mergeWithAnotherJson = json.mergeWithAnotherJson(sendTextMessage);
-			return mergeWithAnotherJson;
-		}
-
-	}
-	
-	public static enum BotType implements CcpJsonFieldName{
-		user, 
-		support
-		;
-		
-		protected CcpJsonRepresentation getParameterToSearchBot() {
-			String botName =  this.name();
-			var parameterToSearchBots = CcpOtherConstants.EMPTY_JSON
-					.put(JbEntityBot.Fields.botName, botName)
-					
-			;
-			return parameterToSearchBots;
-		}
-		
-	}
-	private final Map<String, BotCommandStep> allSteps;
+	private final Map<String, JbBotBusiness> allSteps;
 	
 	private JbBotEngine() {
 		JnSystemProperties systemProperties = new JnSystemProperties();
-		BotType[] bots = BotType.values();
+		
+		JbBotType[] bots = JbBotType.values();
+		
 		CcpJsonRepresentation[] parametersToSearchBots = new CcpJsonRepresentation[bots.length];
 		List<String> languages = systemProperties.languages();
 		
 		int k = 0;
-		for (BotType bot : bots) {
+		for (JbBotType bot : bots) {
 			for (var language : languages) {
 				CcpJsonRepresentation parameterToSearchBots = bot.getParameterToSearchBot();
 				parametersToSearchBots[k++] = parameterToSearchBots
 						.put(JbEntityBotExplanation.Fields.language, language)
 						;
-				
 			}
 		}
 		
 		CcpCrud crud = CcpDependencyInjection.getDependency(CcpCrud.class);
 		CcpSelectUnionAll resultFromSearchBots = crud.unionAll(parametersToSearchBots, JnDeleteKeysFromCache.INSTANCE, JbEntityBot.ENTITY, JbEntityBotExplanation.ENTITY);
+		Map<String, Bot> allBots = new HashMap<>();
+		
+		for (JbBotType botType : bots) {
+			String name = botType.name();
+			Bot bot = new Bot(name, resultFromSearchBots);
+			allBots.put(name, bot);
+		}
+		
+		this.allBots = allBots;
+		
 		k = 0;
 		
 		CcpJsonRepresentation[] parametersToSearchCommandsAndFirstSteps = new CcpJsonRepresentation[bots.length];
@@ -307,7 +103,8 @@ public class JbBotEngine {
 		
 		List<CcpJsonRepresentation> allSteps = new ArrayList<>();
 		List<CcpJsonRepresentation> firstSteps = resultFromSearchCommandsAndFirstSteps.getEntityRows(JbEntityBotCommandStep.ENTITY);
-		List<BotCommand> botCommands = new ArrayList<JbBotEngine.BotCommand>();
+		
+		Map<String, BotCommand> allCommands = new HashMap<>();
 		
 		for (CcpJsonRepresentation firstStep : firstSteps) {
 			var nextSteps = firstStep.getAsJsonList(JbEntityBotCommandStep.Fields.nextStep);
@@ -322,10 +119,10 @@ public class JbBotEngine {
 			}
 			String commandName = firstStep.getAsString(JbEntityBotCommand.Fields.commandName);
 			BotCommand botCommand = new BotCommand(commandName, resultFromSearchCommandsAndFirstSteps);
-			botCommands.add(botCommand);
+			allCommands.put(commandName, botCommand);
 		}
 		
-		
+		this.allCommands = allCommands;
 		
 		CcpJsonRepresentation[] parametersToSearchAllSteps = allSteps.toArray(new CcpJsonRepresentation[allSteps.size()]);
 		
@@ -335,79 +132,580 @@ public class JbBotEngine {
 				JbEntityBotCommandStep.ENTITY 
 				);
 		
-		Map<String, BotCommandStep> stepsMap = new HashMap<String, BotCommandStep>();
+		Map<String, JbBotBusiness> stepsMap = new HashMap<>();
 		
 		List<CcpJsonRepresentation> entityRows = resultFromSearchAllSteps.getEntityRows(JbEntityBotCommandStep.ENTITY);
 		
 		for (CcpJsonRepresentation entityRow : entityRows) {
-			String stepName = entityRow.getAsString(JbEntityBotCommandStep.Fields.stepName);
 			String engine = entityRow.getAsString(JbEntityBotCommandStep.Fields.engine);
-			Map<Integer, String> nextSteps = this.getNextSteps(entityRow);
-			Map<String, String> startMessages = this.getStartMessages(stepName, resultFromSearchAllSteps);
-			Map<String, String> explanations = this.getExplanations(stepName, resultFromSearchAllSteps);
-			Map<Integer, Map<String, String>> endMessages = this.getEndMessages(stepName, resultFromSearchAllSteps);
-			BotCommandStep step = new BotCommandStep(stepName, engine, nextSteps, startMessages, explanations, endMessages);
+			String stepName = entityRow.getAsString(JbEntityBotCommandStep.Fields.stepName);
+			BotCommandStep step = new BotCommandStep(stepName, engine, resultFromSearchAllSteps);
 			stepsMap.put(stepName, step);
 		}
 		
+		CommonsBotCommandStep[] values = CommonsBotCommandStep.values();
+		for (CommonsBotCommandStep value : values) {
+			String name = value.name();
+			BotCommandStep botCommandStep = value.getBotCommandStep(resultFromSearchAllSteps);
+			stepsMap.put(name, botCommandStep);
+		}
 		this.allSteps = stepsMap;
 	}
 
-	private Map<Integer, Map<String, String>> getEndMessages(String stepName, CcpSelectUnionAll resultFromSearchAllSteps) {
-		List<CcpJsonRepresentation> entityRows = resultFromSearchAllSteps.getEntityRows(JbEntityBotCommandStepEndMessage.ENTITY);
-		List<CcpJsonRepresentation> collect = entityRows.stream().filter(x -> x.getAsString(JbEntityBotCommandStepEndMessage.Fields.stepName).equals(stepName)).collect(Collectors.toList());
-		Set<Integer> allStatus = new ArrayList<>(collect).stream().map(x -> x.getAsIntegerNumber(JbEntityBotCommandStepEndMessage.Fields.status))
-		.collect(Collectors.toSet());
-
-		var response = new HashMap<Integer, Map<String, String>>();
-		for (Integer status : allStatus) {
-			List<CcpJsonRepresentation> filtered = new ArrayList<>(collect).stream().filter(x -> x.getAsIntegerNumber(JbEntityBotCommandStepEndMessage.Fields.status).equals(status)).collect(Collectors.toList());
-			Map<String, String> endMessages = new HashMap<String, String>();
-			for (CcpJsonRepresentation json : filtered) {
-				String language = json.getAsString(JbEntityBotCommandStepEndMessage.Fields.language);
-				String message = json.getAsString(JbEntityBotCommandStepEndMessage.Fields.message);
-				endMessages.put(language, message);
-			}
-			response.put(status, endMessages);
-		}	
+	
+	public static enum JbBotType implements CcpJsonFieldName{
+		user, support;
 		
-		return response;
+		private CcpJsonRepresentation getParameterToSearchBot() {
+			String botName =  this.name();
+			var parameterToSearchBots = CcpOtherConstants.EMPTY_JSON
+					.put(JbEntityBot.Fields.botName, botName)
+			;
+			return parameterToSearchBots;
+		}
+		
+		public Bot getBot() {
+			Bot bot = JbBotEngine.INSTANCE.allBots.get(this.name());
+			return bot;
+		}
 	}
+	
+	public static interface JbBotBusiness extends CcpBusiness, CcpJsonFieldName{
+		default boolean isVisible(CcpJsonRepresentation json) {
+			return true;
+		}
+		
+		default boolean hasPriority(CcpJsonRepresentation json) {
+			return false;
+		}
+		
+		default Bot getBot(CcpJsonRepresentation json) {
+			String name = json.getAsString(JbEntityBot.Fields.botName);
+			var response = JbBotEngine.INSTANCE.allBots.get(name);
+			return response;
+		}
 
-	private Map<String, String> getExplanations(String stepName, CcpSelectUnionAll resultFromSearchAllSteps) {
-		List<CcpJsonRepresentation> entityRows = resultFromSearchAllSteps.getEntityRows(JbEntityBotCommandStepExplanation.ENTITY);
-		List<CcpJsonRepresentation> collect = entityRows.stream().filter(x -> x.getAsString(JbEntityBotCommandStepExplanation.Fields.stepName).equals(stepName)).collect(Collectors.toList());
-		Map<String, String> response = new HashMap<>();
-		for (CcpJsonRepresentation json : collect) {
-			String language = json.getAsString(JbEntityBotCommandStepExplanation.Fields.language);
-			String message = json.getAsString(JbEntityBotCommandStepExplanation.Fields.message);
-			response.put(language, message);
+		default JbBotBusiness getLoadedCommand(CcpJsonRepresentation json) {
+			JbBotBusiness response = this.getBot(json).getCommand(json);
+			return response;
+		}
+		
+		default Map<String, String> loadLabelsWithLanguages(String filterValue, CcpSelectUnionAll resultFromSearchAllSteps, CcpEntity entity, CcpJsonFieldName filterField, CcpJsonFieldName languageField, CcpJsonFieldName messageField) {
+			List<CcpJsonRepresentation> entityRows = resultFromSearchAllSteps.getEntityRows(entity);
+			List<CcpJsonRepresentation> collect = entityRows.stream().filter(x -> x.getAsString(filterField).equals(filterValue)).collect(Collectors.toList());
+			Map<String, String> response = new HashMap<>();
+			for (CcpJsonRepresentation json : collect) {
+				String language = json.getAsString(languageField);
+				String message = json.getAsString(messageField);
+				response.put(language, message);
+			}
+			return response;
+		}
+		
+		default String getExplanation(CcpJsonRepresentation json) {
+			return "";
+		}
+		
+		default boolean hasExplanation(CcpJsonRepresentation json) {
+			return false;
+		}
+		
+		default String getIdentifier(CcpJsonRepresentation json) {
+			String name = this.name();
+			return name;
+		}
+	}
+	
+	private static enum CommonsBotCommandStep implements JbBotBusiness{
+		
+			saveSession{
+
+				public CcpJsonRepresentation apply(CcpJsonRepresentation newJson) {
+					CcpJsonRepresentation removeFields = newJson.removeFields(JbEntityBotCommandStepSession.Fields.commandName, JbEntityBotCommandStepSession.Fields.stepName);
+					CcpJsonRepresentation put = newJson.put(JbEntityBotCommandStepSession.Fields.json, removeFields);
+					JbEntityBotCommandStepSession.ENTITY.save(put);
+					return newJson;
+				}
+				
+				public boolean isVisible(CcpJsonRepresentation json) {
+					return false;
+				}
+				
+				public boolean hasPriority(CcpJsonRepresentation json) {
+					return false;
+				}
+			},
+		
+			removeSession{
+				public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+					JbEntityBotCommandStepSession.ENTITY.delete(json);
+					CcpJsonRepresentation removeFields = json.removeFields(Fields.stepName, Fields.commandName);
+					return removeFields;
+				}				
+				
+			},
+			chatId{
+				public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+					Long chatId = json.getAsLongNumber(JbEntityBotCommandStepSession.Fields.chatId);
+					
+					Bot bot = this.getBot(json);
+					json = bot.sendMessage(json, "" + chatId);
+					return json;
+				}
+				
+				
+			},
+			showAllCommands{
+				public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+					
+					Bot bot = this.getBot(json);
+					String listedCommands = bot.getAllCommands(json)
+							.stream()
+							.filter(x -> x.isVisible(json))
+							.map(x -> x.getIdentifier(json))
+							.collect(Collectors.toList())
+							.toString()
+							.replace("[", "")
+							.replace("]", "")
+							.replace(",", ", ")
+							;
+					CcpJsonRepresentation sendMessage = bot.sendMessage(json, listedCommands);
+					return sendMessage;
+				}
+				
+			},
+			explainThisBot{
+				public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+					var bot = this.getBot(json);
+					String explanation = bot.getExplanation(json);
+					CcpJsonRepresentation sendMessage = bot.sendMessage(json, explanation);
+					return sendMessage;
+				}
+				
+				public boolean isVisible(CcpJsonRepresentation json) {
+					Bot bot = this.getBot(json);
+					boolean hasExplanation = bot.hasExplanation(json);
+					return hasExplanation;
+				}
+			},
+			explainThisCommand{
+				public boolean isVisible(CcpJsonRepresentation json) {
+					boolean commandLess = false == json.containsAllFields(Fields.commandName);
+					if(commandLess) {
+						return false;
+					}
+					
+					JbBotBusiness command = this.getLoadedCommand(json);
+					boolean hasExplanation = command.hasExplanation(json);
+					return hasExplanation;
+				}
+
+				public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+					JbBotBusiness command = this.getLoadedCommand(json);
+					String explanation = command.getExplanation(json);
+					
+					Bot bot = this.getBot(json);
+					CcpJsonRepresentation sendMessage = bot.sendMessage(json, explanation);
+					return sendMessage;
+				}
+			}
+		;
+		private BotCommandStep getBotCommandStep(CcpSelectUnionAll result) {
+			BotCommandStep response = new BotCommandStep(this.name(), this, result);
+			return response;
+		}
+
+			public boolean hasPriority(CcpJsonRepresentation json) {
+				return true;
+			}
+	}
+	
+	private static enum Fields implements CcpJsonFieldName{
+		bots, token,  replyTo, language, stepName, status, commandName, typedValue
+	}
+	
+	private static class Bot implements JbBotBusiness{
+		private final String name;
+		private final List<String> commands;
+		private final Map<String, String> explanations;
+
+		private Bot(String name, CcpSelectUnionAll resultFromSearchBots) {
+			this.explanations = this.loadLabelsWithLanguages(name, resultFromSearchBots, JbEntityBotExplanation.ENTITY, JbEntityBotExplanation.Fields.botName, JbEntityBotExplanation.Fields.language, JbEntityBotExplanation.Fields.message);
+			this.commands = this.loadCommands(name, resultFromSearchBots);
+			this.name = name;
+		}
+		
+		private List<String> loadCommands(String name, CcpSelectUnionAll resultFromSearchBots){
+			JbBotType valueOf = JbBotType.valueOf(name);
+			CcpJsonRepresentation parameterToSearchBot = valueOf.getParameterToSearchBot();
+			CcpJsonRepresentation recordFromUnionAll = JbEntityBot.ENTITY.getRecordFromUnionAll(resultFromSearchBots, parameterToSearchBot);
+			List<String> commands = new ArrayList<>(recordFromUnionAll.getAsStringList(JbEntityBot.Fields.commandName));
+			CommonsBotCommandStep[] values = CommonsBotCommandStep.values();
+			List<String> commonsCommands = Arrays.asList(values).stream().map(x -> x.name()).collect(Collectors.toList());
+			commands.addAll(commonsCommands);
+			return commands;
+		}
+		
+		public String toString() {
+			return this.name;
+		}
+		
+		private JbBotBusiness getCommand(CcpJsonRepresentation json) {
 			
-		}
-		return response;
-	}
-
-	private Map<String, String> getStartMessages(String stepName, CcpSelectUnionAll resultFromSearchAllSteps) {
-		List<CcpJsonRepresentation> entityRows = resultFromSearchAllSteps.getEntityRows(JbEntityBotCommandStepStartMessage.ENTITY);
-		List<CcpJsonRepresentation> collect = entityRows.stream().filter(x -> x.getAsString(JbEntityBotCommandStepStartMessage.Fields.stepName).equals(stepName)).collect(Collectors.toList());
-		Map<String, String> response = new HashMap<>();
-		for (CcpJsonRepresentation json : collect) {
-			String language = json.getAsString(JbEntityBotCommandStepStartMessage.Fields.language);
-			String message = json.getAsString(JbEntityBotCommandStepStartMessage.Fields.message);
-			response.put(language, message);
+			CcpJsonRepresentation commandData = this.getCommandData(json);
 			
-		}
-		return response;
-	}
+			String commandName = commandData.getAsString(JbEntityBotCommandStepSession.Fields.commandName);
+			
+			boolean commandWasFound = false == commandName.trim().isEmpty();
+			
+			if(commandWasFound) {
+				JbBotBusiness command = this.getCommand(json, commandName);
+				return command;
+			}
 
-	private Map<Integer, String> getNextSteps(CcpJsonRepresentation entityRow) {
-		Map<Integer, String> nextSteps = new HashMap<>();
-		List<CcpJsonRepresentation> asJsonList = entityRow.getAsJsonList(JbEntityBotCommandStep.Fields.nextStep);
-		for (CcpJsonRepresentation json : asJsonList) {
-			Integer status = json.getAsIntegerNumber(Fields.status);
-			String stepName = json.getAsString(JbEntityBotCommandStep.Fields.stepName);
-			nextSteps.put(status, stepName);
+			String typedValue = json.getAsString(Fields.typedValue);
+			JbBotBusiness command = this.getCommand(json, typedValue);
+			
+			boolean hasPriority = command.hasPriority(json);
+			
+			if(hasPriority) {
+				return command;
+			}
+			
+			CcpJsonRepresentation sessionToSave = json.duplicateValueFromField(Fields.typedValue, JbEntityBotCommandStepSession.Fields.stepName, JbEntityBotCommandStepSession.Fields.commandName);
+			CommonsBotCommandStep.saveSession.apply(sessionToSave);
+			return command;
 		}
-		return nextSteps;
+
+		private JbBotBusiness getCommand(CcpJsonRepresentation json, String commandName) {
+			Optional<BotCommand> findFirst = JbBotEngine.INSTANCE.allCommands.values().stream()
+			.filter(x -> x.getIdentifier(json).equals(commandName))
+			.filter(x -> x.isVisible(json))
+			.findFirst();
+			
+			boolean commandNotFound = false == findFirst.isPresent();
+		
+			if(commandNotFound) {
+				return CommonsBotCommandStep.showAllCommands;
+			}
+
+			BotCommand botCommand = findFirst.get();
+			return botCommand;
+		}
+
+		private CcpJsonRepresentation getCommandData(CcpJsonRepresentation json) {
+			
+			String typedValue = json.getAsString(Fields.typedValue);
+			
+			Optional<BotCommand> findFirst = JbBotEngine.INSTANCE.allCommands.values().stream()
+			.filter(x -> x.getIdentifier(json).equals(typedValue))
+			.filter(x -> x.isVisible(json))
+			.filter(x -> x.hasPriority(json))
+			.findFirst();
+			
+			
+			boolean priorityCommandWillBePerformedRighNow = findFirst.isPresent();
+			
+			if(priorityCommandWillBePerformedRighNow) {
+				BotCommand botCommand = findFirst.get();
+				CcpJsonRepresentation put = json
+						.put(JbEntityBotCommandStepSession.Fields.commandName, botCommand.name)
+						.put(JbEntityBotCommandStepSession.Fields.stepName, botCommand.name);
+				return put;
+			}
+			
+
+			boolean isPerformingCommandRightNow = json.containsAllFields(Fields.commandName, Fields.stepName);
+			
+			if(isPerformingCommandRightNow) {
+				String commandName = json.getAsString(Fields.commandName);
+				CcpJsonRepresentation put = json
+						.put(JbEntityBotCommandStepSession.Fields.commandName, commandName)
+						.put(JbEntityBotCommandStepSession.Fields.stepName, commandName);
+				return put;
+			}	
+
+			CcpEntityMetaData entityMetaData = JbEntityBotCommandStepSession.ENTITY.getEntityMetaData();
+			
+			CcpJsonRepresentation oneById = entityMetaData.getOneByIdOrHandleItIfThisIdWasNotFound(json, CcpOtherConstants.RETURNS_EMPTY_JSON);
+			
+			CcpJsonRepresentation innerJson = oneById.getInnerJson(JbEntityBotCommandStepSession.Fields.json);
+			
+			CcpJsonRepresentation mergeWithAnotherJson = innerJson.mergeWithAnotherJson(json);
+
+			return mergeWithAnotherJson;
+		}
+		
+		private CcpJsonRepresentation sendMessage(CcpErrorFlowDisturb e, Predicate<CcpErrorFlowDisturb> condition, Function<CcpErrorFlowDisturb, Map<String, String>> messagesProducer) {
+			
+			boolean conditionDoesNotMatch = false == condition.test(e);
+			
+			if(conditionDoesNotMatch) {
+				return e.json;
+			}
+			
+			CcpJsonRepresentation json = e.json;
+			Map<String, String> messages = messagesProducer.apply(e);
+			CcpJsonRepresentation sendMessage = this.sendMessage(json, messages);
+			return sendMessage;
+		}
+
+		private CcpJsonRepresentation sendMessage(CcpJsonRepresentation json, Map<String, String> messages) {
+			String language = json.getAsString(Fields.language);
+			String message = messages.get(language);
+			boolean hasNotMessage = false == messages.containsKey(language);
+
+			if(hasNotMessage) {
+				return json;
+			}
+			CcpJsonRepresentation mergeWithAnotherJson = this.sendMessage(json, message);
+			return mergeWithAnotherJson;
+		}
+
+		private CcpJsonRepresentation sendMessage(CcpJsonRepresentation json, String message) {
+			JnSystemProperties systemProperties = new JnSystemProperties();
+			CcpInstantMessenger instantMessenger = CcpDependencyInjection.getDependency(CcpInstantMessenger.class);
+			
+			Bot bot = this.getBot(json);
+			
+			String botToken = systemProperties.getSystemInnerProperty(Fields.bots, bot, Fields.token) ;
+			Long chatId = json.getAsLongNumber(JbEntityBotCommandStepSession.Fields.chatId);
+			Long replyTo = json.getAsLongNumber(Fields.replyTo);
+			
+			CcpJsonRepresentation sendTextMessage = instantMessenger.sendTextMessage(botToken, chatId, replyTo, message);
+			CcpJsonRepresentation mergeWithAnotherJson = json.mergeWithAnotherJson(sendTextMessage);
+			return mergeWithAnotherJson;
+		}
+
+		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+			
+			CcpJsonRepresentation put = json.put(JbEntityBotCommandStepSession.Fields.botName, this.name);
+
+			JbBotBusiness currentCommand = this.getCommand(json);
+			
+			CcpJsonRepresentation apply = currentCommand.apply(put);
+			
+			return apply;
+		} 	
+		
+		public String name() {
+			return this.name;
+		}
+		
+		public boolean hasExplanation(CcpJsonRepresentation json) {
+			String language = json.getAsString(Fields.language);
+			boolean response = this.explanations.containsKey(language);
+			return response;
+		}
+
+		public String getExplanation(CcpJsonRepresentation json) {
+			String language = json.getAsString(Fields.language);
+			String response = this.explanations.get(language);
+			return response;
+		}
+		
+		private List<JbBotBusiness> getAllCommands(CcpJsonRepresentation json){
+			List<JbBotBusiness> collect = this.commands.stream().map(x -> this.getCommand(json)).collect(Collectors.toList());
+			return collect;
+		}
+		
 	}
+	private static class BotCommand implements JbBotBusiness{
+		
+		private final String name;	
+		private final Map<String, String> names;
+		private final Map<String, String> explanations;
+		
+		private BotCommand(String name, CcpSelectUnionAll result) {
+
+			this.explanations = this.loadLabelsWithLanguages(name, result, JbEntityBotCommandExplanation.ENTITY, JbEntityBotCommandExplanation.Fields.commandName, JbEntityBotCommandExplanation.Fields.language, JbEntityBotCommandExplanation.Fields.message);
+			this.names = this.loadLabelsWithLanguages(name, result, JbEntityBotCommandName.ENTITY, JbEntityBotCommandName.Fields.commandName, JbEntityBotCommandName.Fields.language, JbEntityBotCommandName.Fields.message);
+			this.name = name;
+		
+		}
+
+		public boolean equals(Object obj) {
+			try {
+				boolean equals = ((BotCommand)obj).name.equals(this.name);
+				return equals;
+			} catch (Exception e) {
+				return false;
+			}
+		}
+		
+		public int hashCode() {
+			int hashCode = this.name.hashCode();
+			return hashCode;
+		}
+		
+		public String toString() {
+			return this.name;
+		}
+
+		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+
+			String stepName = json.getAsString(Fields.stepName);
+			
+			JbBotBusiness botCommandStep = JbBotEngine.INSTANCE.allSteps.get(stepName);
+			
+			CcpJsonRepresentation apply = botCommandStep.apply(json);
+
+			return apply;
+		}
+		
+		public boolean hasExplanation(CcpJsonRepresentation json) {
+			String language = json.getAsString(Fields.language);
+			boolean response = this.explanations.containsKey(language);
+			return response;
+		}
+
+		public String getExplanation(CcpJsonRepresentation json) {
+			String language = json.getAsString(Fields.language);
+			String response = this.explanations.get(language);
+			return response;
+		}
+
+		public String getIdentifier(CcpJsonRepresentation json) {
+			String language = json.getAsString(Fields.language);
+			String response = "/" + this.names.getOrDefault(language, this.name);
+			return response;
+		}
+
+		public boolean isVisible(CcpJsonRepresentation json) {
+			
+			JbBotBusiness firstStep = JbBotEngine.INSTANCE.allSteps.get(this.name);
+			
+			boolean listed = firstStep.isVisible(json);
+			
+			return listed;
+		}
+		
+		public String name() {
+			return this.name;
+		}
+	}
+	
+	private static class BotCommandStep implements JbBotBusiness{
+
+		private final String name;
+		private final CcpBusiness engine;
+		private final Map<Integer, String> nextSteps;
+		private final Map<String, String> explanations;
+		private final Map<String, String> startMessages;
+		private final Map<Integer, Map<String, String>> endMessages;
+		
+		private BotCommandStep(String name, String engine, CcpSelectUnionAll result) {
+			this(name, (CcpBusiness)new CcpStringDecorator(engine).reflection().newInstance(), result);
+		}
+
+		private BotCommandStep(String name, CcpBusiness engine, CcpSelectUnionAll result) {
+
+			this.name = name;
+			this.engine = engine;
+			this.nextSteps = this.getNextSteps(name, result);
+			this.endMessages = this.getEndMessages(name, result);
+			this.explanations = this.loadLabelsWithLanguages(name, result, JbEntityBotCommandStepExplanation.ENTITY, JbEntityBotCommandStepExplanation.Fields.stepName, JbEntityBotCommandStepExplanation.Fields.language, JbEntityBotCommandStepExplanation.Fields.message);
+			this.startMessages = this.loadLabelsWithLanguages(name, result, JbEntityBotCommandStepStartMessage.ENTITY, JbEntityBotCommandStepStartMessage.Fields.stepName, JbEntityBotCommandStepStartMessage.Fields.language, JbEntityBotCommandStepStartMessage.Fields.message);
+		}
+		
+		private Map<Integer, String> getNextSteps(String name, CcpSelectUnionAll result) {
+			Map<Integer, String> nextSteps = new HashMap<>();
+			CcpJsonRepresentation parametersToSearch = CcpOtherConstants.EMPTY_JSON.put(JbEntityBotCommandStep.Fields.stepName, name);
+			CcpJsonRepresentation entityRow = JbEntityBotCommandStep.ENTITY.getRecordFromUnionAll(result, parametersToSearch);
+			List<CcpJsonRepresentation> asJsonList = entityRow.getAsJsonList(JbEntityBotCommandStep.Fields.nextStep);
+			for (CcpJsonRepresentation json : asJsonList) {
+				Integer status = json.getAsIntegerNumber(Fields.status);
+				String stepName = json.getAsString(JbEntityBotCommandStep.Fields.stepName);
+				nextSteps.put(status, stepName);
+			}
+			return nextSteps;
+		}
+		
+		private Map<Integer, Map<String, String>> getEndMessages(String stepName, CcpSelectUnionAll resultFromSearchAllSteps) {
+			List<CcpJsonRepresentation> entityRows = resultFromSearchAllSteps.getEntityRows(JbEntityBotCommandStepEndMessage.ENTITY);
+			List<CcpJsonRepresentation> collect = entityRows.stream().filter(x -> x.getAsString(JbEntityBotCommandStepEndMessage.Fields.stepName).equals(stepName)).collect(Collectors.toList());
+			Set<Integer> allStatus = new ArrayList<>(collect).stream().map(x -> x.getAsIntegerNumber(JbEntityBotCommandStepEndMessage.Fields.status))
+			.collect(Collectors.toSet());
+
+			var response = new HashMap<Integer, Map<String, String>>();
+			for (Integer status : allStatus) {
+				List<CcpJsonRepresentation> filtered = new ArrayList<>(collect).stream().filter(x -> x.getAsIntegerNumber(JbEntityBotCommandStepEndMessage.Fields.status).equals(status)).collect(Collectors.toList());
+				Map<String, String> endMessages = new HashMap<String, String>();
+				for (CcpJsonRepresentation json : filtered) {
+					String language = json.getAsString(JbEntityBotCommandStepEndMessage.Fields.language);
+					String message = json.getAsString(JbEntityBotCommandStepEndMessage.Fields.message);
+					endMessages.put(language, message);
+				}
+				response.put(status, endMessages);
+			}	
+			
+			return response;
+		}
+
+		public boolean equals(Object obj) {
+			try {
+				boolean equals = ((BotCommand)obj).name.equals(this.name);
+				return equals;
+			} catch (Exception e) {
+				return false;
+			}
+		}
+		
+		public int hashCode() {
+			int hashCode = this.name.hashCode();
+			return hashCode;
+		}
+		
+		public String toString() {
+			return this.name;
+		}
+
+		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+			Bot bot = this.getBot(json);	
+			try {
+				json = bot.sendMessage(json, this.startMessages);
+				CcpJsonRepresentation apply = this.engine.execute(json);
+				CcpJsonRepresentation closeSession = CommonsBotCommandStep.removeSession.apply(apply);
+				return closeSession;
+			} catch(CcpJsonValidationError e) {
+				json = bot.sendMessage(json, this.explanations);
+				return json;
+			} catch (CcpErrorFlowDisturb e) {
+				
+				json = bot.sendMessage(e, ex -> this.endMessages.containsKey(ex.status.asNumber()), ex ->  this.endMessages.get(ex.status.asNumber()));
+				
+				Predicate<CcpErrorFlowDisturb> evaluateIfHasMoreSession = ex -> this.nextSteps.containsKey(ex.status.asNumber());
+				
+				Function<CcpErrorFlowDisturb, CcpJsonRepresentation> updateSession = ex -> {
+					int asNumber = ex.status.asNumber();
+					String nextStep = this.nextSteps.get(asNumber);
+					CcpJsonRepresentation newJson = ex.json.put(JbEntityBotCommandStepSession.Fields.stepName, nextStep);
+					CommonsBotCommandStep.saveSession.apply(newJson);
+					return newJson;
+				};
+				
+				Function<CcpErrorFlowDisturb, CcpJsonRepresentation> removeSession = ex -> CommonsBotCommandStep.removeSession.apply(ex.json);
+				
+				CcpJsonRepresentation result = this.execute(e, evaluateIfHasMoreSession, updateSession, removeSession);
+				return result;
+			}
+		}
+
+		private CcpJsonRepresentation execute(CcpErrorFlowDisturb e, Predicate<CcpErrorFlowDisturb> condition, Function<CcpErrorFlowDisturb, CcpJsonRepresentation> jsonProducerIfConditionMatches, Function<CcpErrorFlowDisturb, CcpJsonRepresentation> jsonProducerIfConditionDoesNotMatch) {
+
+			boolean conditionMatches = condition.test(e);
+			
+			if(conditionMatches) {
+				CcpJsonRepresentation apply = jsonProducerIfConditionMatches.apply(e);
+				return apply;
+			}
+			CcpJsonRepresentation apply = jsonProducerIfConditionDoesNotMatch.apply(e);
+			return apply;
+		}
+		
+		public String name() {
+			return this.name;
+		}
+	}
+	
 }
