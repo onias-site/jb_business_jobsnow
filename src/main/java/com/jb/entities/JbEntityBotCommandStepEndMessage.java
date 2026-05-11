@@ -10,7 +10,6 @@ import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityFactor
 import com.ccp.especifications.db.utils.entity.decorators.interfaces.CcpEntityConfigurator;
 import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityFieldPrimaryKey;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
-import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNumberInteger;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
 import com.jn.entities.decorators.JnVersionableEntity;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
@@ -27,9 +26,6 @@ public class JbEntityBotCommandStepEndMessage implements CcpEntityConfigurator {
 		@CcpEntityFieldPrimaryKey
 		@CcpJsonFieldTypeString
 		stepName, 
-		@CcpEntityFieldPrimaryKey
-		@CcpJsonFieldTypeNumberInteger
-		status,
 		@CcpEntityFieldPrimaryKey
 		@CcpJsonFieldTypeString
 		language, 

@@ -9,9 +9,8 @@ import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityV
 import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityFactory;
 import com.ccp.especifications.db.utils.entity.decorators.interfaces.CcpEntityConfigurator;
 import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityFieldPrimaryKey;
-import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorArray;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
-import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNestedJson;
+import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNumberInteger;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
 import com.jn.entities.decorators.JnVersionableEntity;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
@@ -19,27 +18,25 @@ import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault
 @CcpEntityCache(3600)
 @CcpEntityVersionable(JnVersionableEntity.class)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
-@CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandStep.Fields.class)
-public class JbEntityBotCommandStep implements CcpEntityConfigurator {
+@CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandStepFlowMessage.Fields.class)
+public class JbEntityBotCommandStepFlowMessage implements CcpEntityConfigurator {
 
-	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommandStep.class).entityInstance;
+	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommandStepFlowMessage.class).entityInstance;
 	
 	public static enum Fields implements CcpJsonFieldName{
 		@CcpEntityFieldPrimaryKey
 		@CcpJsonFieldTypeString
 		stepName, 
-		@CcpJsonFieldValidatorArray(minSize = 1)
-		@CcpJsonFieldValidatorRequired
-		@CcpJsonFieldTypeNestedJson
-		stepFlow,
+		@CcpEntityFieldPrimaryKey
+		@CcpJsonFieldTypeNumberInteger
+		status,
+		@CcpEntityFieldPrimaryKey
+		@CcpJsonFieldTypeString
+		language, 
 		@CcpJsonFieldValidatorRequired
 		@CcpJsonFieldTypeString
-		engine,
-		@CcpJsonFieldTypeString
-		nextStep,
+		message, 
 		;
-		
-		
 		
 	}
 }
