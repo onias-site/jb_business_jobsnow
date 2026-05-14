@@ -1,14 +1,20 @@
 package com.jb.business.bots.login.token;
 
+import static com.jb.business.bots.login.token.LoginTokenTicketsJsonConditions.hasAlegation;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import com.ccp.business.CcpBusiness;
 import com.ccp.constantes.CcpOtherConstants;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpJsonRepresentation.CcpDynamicJsonRepresentation;
+import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
 import com.ccp.dependency.injection.CcpDependencyInjection;
+import com.ccp.especifications.db.crud.CcpCrud;
+import com.ccp.especifications.db.crud.CcpSelectUnionAll;
 import com.ccp.especifications.db.query.CcpQueryExecutorDecorator;
 import com.ccp.especifications.db.query.CcpQueryOptions;
 import com.ccp.especifications.db.utils.CcpDbRequester;
@@ -17,10 +23,14 @@ import com.ccp.flow.CcpErrorFlowDisturb;
 import com.ccp.process.CcpProcessStatusDefault;
 import com.jn.entities.JnEntityLoginTokenRequestResend;
 import com.jn.entities.JnEntityLoginTokenRequestUnlock;
+import com.jn.entities.JnEntitySystemMessage;
+import com.jn.utils.JnDeleteKeysFromCache;
 
 enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 	readAllLoginTokenTicketsFunction{
 		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+			
+			
 			CcpQueryOptions query = CcpQueryOptions.INSTANCE.matchAll();
 			CcpQueryExecutorDecorator selectFrom = query.selectFrom(JnEntityLoginTokenRequestResend.ENTITY, JnEntityLoginTokenRequestUnlock.ENTITY);
 			CcpDbRequester dependency = CcpDependencyInjection.getDependency(CcpDbRequester.class);
@@ -39,6 +49,7 @@ enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 			
 			int listSize = resultAsList.size();
 			int counter = json.getOrDefault(LoginTokenTicketsJsonFields.counter, () -> 0);
+			
 			CcpJsonRepresentation newJson = CcpOtherConstants.EMPTY_JSON
 			.put(LoginTokenTicketsJsonFields.listValues, resultAsList)
 			.put(LoginTokenTicketsJsonFields.listSize, listSize)
@@ -46,8 +57,42 @@ enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 			;
 			return newJson;
 		}
-
 	},
+	
+	searchAlegations{
+
+		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+
+			CcpJsonFieldName entityName = () -> CcpDependencyInjection.getDependency(CcpDbRequester.class).getFieldNameToEntity();
+			
+			Supplier<CcpJsonRepresentation> jsonSupplier = () -> json.duplicateValueFromField(entityName, JnEntitySystemMessage.Fields.systemMessageName);
+
+			CcpJsonRepresentation parametersToSearch = jsonSupplier.get();
+			
+			CcpCrud crud = CcpDependencyInjection.getDependency(CcpCrud.class);
+			
+			CcpSelectUnionAll resultFromSearchBots = crud.unionAll(parametersToSearch, JnDeleteKeysFromCache.INSTANCE, JnEntitySystemMessage.ENTITY);
+			
+			CcpJsonRepresentation systemMessage = JnEntitySystemMessage.ENTITY.getRecordFromUnionAll(resultFromSearchBots, jsonSupplier);
+			
+			String alegation = systemMessage.getAsString(JnEntitySystemMessage.Fields.message);
+
+			CcpJsonRepresentation put = json.put(OtherFields.alegation, alegation);
+			
+			return put;
+		}
+	},
+	
+	chooseOneAlegation{
+
+		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+			String alegation = LoginTokenTicketsJsonConditions.getAlegation(json);
+			CcpJsonRepresentation put = json.put(OtherFields.alegation, alegation);
+			return put;
+		}
+		
+	},
+	
 	solveLoginTokenTicketsFunction{
 		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 			CcpJsonRepresentation result = json.whenAllFieldsAreFound(readAllLoginTokenTicketsFunction, LoginTokenTicketsJsonFields.values());
@@ -63,11 +108,17 @@ enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 			CcpEntity entity = entities.get(entityName);
 			CcpJsonRepresentation allDataAboutTicketSolution = entity.delete(jsonWithTicket);
 			CcpJsonRepresentation ticketWithAllDataAboutTicketSolution = allDataAboutTicketSolution.mergeWithAnotherJson(allDataAboutTicketSolution);
+
+			CcpJsonRepresentation ticketWithAlegation = ticketWithAllDataAboutTicketSolution
+					.getTransformedJsonExecutingIfAndElse(hasAlegation, CcpOtherConstants.DO_NOTHING, searchAlegations)
+					.getTransformedJson(chooseOneAlegation)
+					;
 			
-			CcpJsonRepresentation updatedValues = ticketWithAllDataAboutTicketSolution
+			
+			CcpJsonRepresentation updatedValues = ticketWithAlegation
 			.put(LoginTokenTicketsJsonFields.counter, counter + 1)
-			.put(LoginTokenTicketsJsonFields.position, position);
-			
+			.put(LoginTokenTicketsJsonFields.position, position)
+			;
 			return updatedValues;
 
 		}

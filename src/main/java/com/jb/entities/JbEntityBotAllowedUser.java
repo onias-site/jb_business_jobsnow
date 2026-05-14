@@ -1,6 +1,12 @@
 package com.jb.entities;
 
+import java.util.Arrays;
+import java.util.List;
+
+import com.ccp.constantes.CcpOtherConstants;
+import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
+import com.ccp.especifications.db.bulk.CcpBulkItem;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCache;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityFieldsTransformer;
@@ -12,6 +18,7 @@ import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorArray;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNumberUnsigned;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
+import com.jb.business.bots.engine.JbBotEngine.JbBotType;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 
 @CcpEntityCache(3600)
@@ -29,8 +36,24 @@ public class JbEntityBotAllowedUser implements CcpEntityConfigurator {
 		@CcpJsonFieldValidatorArray
 		@CcpJsonFieldValidatorRequired
 		@CcpJsonFieldTypeNumberUnsigned
-		allowedUsers
+		allowedUser
 		;
+	}
+	
+	
+	public List<CcpBulkItem> getFirstRecordsToInsert() {
+
+		List<Long> allowedUser = Arrays.asList(751717896L);
 		
+		CcpJsonRepresentation data = CcpOtherConstants.EMPTY_JSON
+		.put(Fields.botName, JbBotType.support.name())
+		.put(Fields.allowedUser, allowedUser);
+		
+		
+		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(
+				ENTITY
+				,data
+				);
+		return createBulkItems;
 	}
 }

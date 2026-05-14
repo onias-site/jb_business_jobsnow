@@ -6,3 +6,7 @@ enum LoginTokenTicketsJsonFields implements CcpJsonFieldName{
 	counter, listValues, listSize, position
 	;
 }
+
+enum OtherFields implements CcpJsonFieldName{
+	alegation
+}

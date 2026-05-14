@@ -333,11 +333,11 @@ public class JbBotEngine {
 	}
 	
 	private static enum Fields implements CcpJsonFieldName{
-		bots, token,  replyTo, language, status, typedValue, commandParameters
+		bots, replyTo, language, status, typedValue, commandParameters
 	}
 	
 	private static class Bot implements JbBotBusiness{
-		private final String name;
+		private final JbBotType botType;
 		private final boolean isRestricted;
 		private final List<String> commands;
 		private final Set<Long> allowedUsers;
@@ -348,7 +348,7 @@ public class JbBotEngine {
 			this.allowedUsers = this.loadAllowedUsers(botType, resultFromSearchBots);
 			this.commands = this.loadCommands(botType, resultFromSearchBots);
 			this.isRestricted = botType.isRestricted();
-			this.name = botType.name();
+			this.botType = botType;
 			
 		}
 		
@@ -356,7 +356,7 @@ public class JbBotEngine {
 
 			Supplier<CcpJsonRepresentation> parameterToSearchBot = valueOf.getParameterToSearchBot();
 			CcpJsonRepresentation recordFromUnionAll = JbEntityBotAllowedUser.ENTITY.getRecordFromUnionAll(resultFromSearchBots, parameterToSearchBot);
-			List<String> asStringList = recordFromUnionAll.getAsStringList(JbEntityBotAllowedUser.Fields.allowedUsers);
+			List<String> asStringList = recordFromUnionAll.getAsStringList(JbEntityBotAllowedUser.Fields.allowedUser);
 			Set<Long> collect = asStringList.stream().map(x -> Long.valueOf(x)).collect(Collectors.toSet());
 			return collect;
 		}
@@ -372,7 +372,7 @@ public class JbBotEngine {
 		}
 		
 		public String toString() {
-			return this.name;
+			return this.name();
 		}
 		
 		private BotCommand getCommand(CcpJsonRepresentation json) {
@@ -504,7 +504,7 @@ public class JbBotEngine {
 			
 			Bot bot = this.getBot(json);
 			
-			String botToken = systemProperties.getSystemInnerProperty(Fields.bots, bot, Fields.token) ;
+			String botToken = systemProperties.getSystemInnerProperty(Fields.bots, bot) ;
 			Long chatId = json.getAsLongNumber(JbEntityBotCommandStepSession.Fields.chatId);
 			Long replyTo = json.getAsLongNumber(Fields.replyTo);
 			
@@ -534,7 +534,7 @@ public class JbBotEngine {
 				return json;
 			}
 			
-			CcpJsonRepresentation newJson = json.put(JbEntityBotCommandStepSession.Fields.botName, this.name);
+			CcpJsonRepresentation newJson = json.put(JbEntityBotCommandStepSession.Fields.botName, this.botType);
 
 			JbBotBusiness command = this.getCommand(newJson);
 			
@@ -558,7 +558,7 @@ public class JbBotEngine {
 		} 
 		
 		public String name() {
-			return this.name;
+			return this.botType.name();
 		}
 		
 		public boolean hasExplanation(CcpJsonRepresentation json) {
@@ -606,7 +606,7 @@ public class JbBotEngine {
 			.put(JbEntityBotCommand.Fields.commandName, name)
 			;
 			CcpJsonRepresentation recordFromUnionAll = JbEntityBotCommand.ENTITY.getRecordFromUnionAll(result, jsonSupplier);
-			List<String> parameterNames = recordFromUnionAll.getAsStringList(JbEntityBotCommand.Fields.parameterNames);
+			List<String> parameterNames = recordFromUnionAll.getAsStringList(JbEntityBotCommand.Fields.parameterName);
 			return parameterNames;
 		}
 
