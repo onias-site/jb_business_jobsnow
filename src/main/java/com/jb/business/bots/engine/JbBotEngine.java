@@ -28,6 +28,7 @@ import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityMetaDa
 import com.ccp.especifications.instant.messenger.CcpInstantMessenger;
 import com.ccp.flow.CcpErrorFlowDisturb;
 import com.ccp.json.validations.global.engine.CcpJsonValidationError;
+import com.jb.business.bots.login.token.JbBotSolveLoginTokenTicket.StepFields;
 import com.jb.entities.JbEntityBot;
 import com.jb.entities.JbEntityBotAllowedUser;
 import com.jb.entities.JbEntityBotCommand;
@@ -333,7 +334,7 @@ public class JbBotEngine {
 	}
 	
 	private static enum Fields implements CcpJsonFieldName{
-		bots, replyTo, language, status, typedValue, commandParameters
+		bots, replyTo, language, status, commandParameters
 	}
 	
 	private static class Bot implements JbBotBusiness{
@@ -388,7 +389,7 @@ public class JbBotEngine {
 				return command;
 			}
 
-			String typedValue = json.getAsString(Fields.typedValue);
+			String typedValue = json.getAsString(StepFields.typedValue);
 			BotCommand command = this.getCommand(json, typedValue);
 			return command;
 		}
@@ -408,7 +409,7 @@ public class JbBotEngine {
 
 		private CcpJsonRepresentation getCommandData(CcpJsonRepresentation json) {
 			
-			String typedValue = json.getAsString(Fields.typedValue);
+			String typedValue = json.getAsString(StepFields.typedValue);
 			
 			Collection<BotCommand> allCommands = JbBotEngine.INSTANCE.allCommands.values();
 			
@@ -456,7 +457,7 @@ public class JbBotEngine {
 			
 			CcpJsonRepresentation oneById = entityMetaData.getOneByIdOrHandleItIfThisIdWasNotFound(parametersToSearchSession, CcpOtherConstants.RETURNS_EMPTY_JSON);
 			
-			CcpJsonRepresentation preservedFields = parametersToSearchSession.getJsonPiece(Fields.typedValue, JbEntityBotCommandStepSession.Fields.chatId, JbEntityBotCommandStepSession.Fields.botName, JbEntityBotCommandStepSession.Fields.commandName, JbEntityBotCommandStepSession.Fields.stepName);
+			CcpJsonRepresentation preservedFields = parametersToSearchSession.getJsonPiece(StepFields.typedValue, JbEntityBotCommandStepSession.Fields.chatId, JbEntityBotCommandStepSession.Fields.botName, JbEntityBotCommandStepSession.Fields.commandName, JbEntityBotCommandStepSession.Fields.stepName);
 			
 			CcpJsonRepresentation savedJson = oneById.getInnerJson(JbEntityBotCommandStepSession.Fields.json);
 			
@@ -628,7 +629,7 @@ public class JbBotEngine {
 		}
 		
 		private CcpJsonRepresentation putParameters(CcpJsonRepresentation json) {
-			String typedValue = json.getAsString(Fields.typedValue);
+			String typedValue = json.getAsString(StepFields.typedValue);
 			String[] split = typedValue.split(" ");
 			List<String> asList = Arrays.asList(split);
 			int size = asList.size();
@@ -914,11 +915,11 @@ public class JbBotEngine {
 		putCommandName{
 
 			public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
-				String typedValue = json.getAsString(Fields.typedValue);
+				String typedValue = json.getAsString(StepFields.typedValue);
 				String[] split = typedValue.split(" ");
 				String first = split[0];
 				CcpJsonRepresentation putSameValueInManyFields = json.putSameValueInManyFields(first, JbEntityBotCommandStepSession.Fields.stepName, JbEntityBotCommandStepSession.Fields.commandName);
-				CcpJsonRepresentation duplicateValueFromField = putSameValueInManyFields.duplicateValueFromField(Fields.typedValue, JbEntityBotCommandStepSession.Fields.stepName, JbEntityBotCommandStepSession.Fields.commandName);
+				CcpJsonRepresentation duplicateValueFromField = putSameValueInManyFields.duplicateValueFromField(StepFields.typedValue, JbEntityBotCommandStepSession.Fields.stepName, JbEntityBotCommandStepSession.Fields.commandName);
 				return duplicateValueFromField;
 			}
 		},

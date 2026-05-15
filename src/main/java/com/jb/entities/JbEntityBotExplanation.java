@@ -42,16 +42,22 @@ public class JbEntityBotExplanation implements CcpEntityConfigurator {
 	
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
 
-		CcpJsonRepresentation data = CcpOtherConstants.EMPTY_JSON
+		CcpJsonRepresentation support = CcpOtherConstants.EMPTY_JSON
+		.put(Fields.message, "Bot de rotinas administrativas que só podem ser acessadas por usuários cadastrados")
 		.put(Fields.language, JnLanguage.portuguese.name())
 		.put(Fields.botName, JbBotType.support.name())
-		.put(Fields.message, "")
+		;
+		CcpJsonRepresentation user = CcpOtherConstants.EMPTY_JSON
+		.put(Fields.message, "Bot de rotinas públicas que podem ser acessadas por todos os usuários")
+		.put(Fields.language, JnLanguage.portuguese.name())
+		.put(Fields.botName, JbBotType.user.name())
 		;
 		
 		
 		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(
 				ENTITY
-				,data
+				,support
+				,user
 				);
 		return createBulkItems;
 	}
