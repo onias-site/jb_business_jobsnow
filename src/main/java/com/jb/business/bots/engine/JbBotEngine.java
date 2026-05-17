@@ -933,4 +933,27 @@ public class JbBotEngine {
 		;
 		static final CcpJsonFieldName jsonFieldName = JbEntityBotCommandStepSession.Fields.json;
 	}
+	
+	public static enum MessageType implements JbBotBusiness{
+		text{
+			public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+				JnSystemProperties systemProperties = new JnSystemProperties();
+				CcpInstantMessenger instantMessenger = CcpDependencyInjection.getDependency(CcpInstantMessenger.class);
+				
+				Bot bot = this.getBot(json);
+				
+				String botToken = systemProperties.getSystemInnerProperty(Fields.bots, bot) ;
+				Long chatId = json.getAsLongNumber(JbEntityBotCommandStepSession.Fields.chatId);
+				Long replyTo = json.getAsLongNumber(Fields.replyTo);
+				CcpJsonRepresentation sendTextMessage = instantMessenger.sendTextMessage(botToken, chatId, replyTo, message.content);
+				return null;
+			}
+		},
+		file{
+			public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+				return null;
+			}
+		}
+		;
+	}
 }

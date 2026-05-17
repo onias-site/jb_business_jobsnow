@@ -114,7 +114,6 @@ enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 					.getTransformedJson(chooseOneAlegation)
 					;
 			
-			
 			CcpJsonRepresentation updatedValues = ticketWithAlegation
 			.put(LoginTokenTicketsJsonFields.counter, counter + 1)
 			.put(LoginTokenTicketsJsonFields.position, position)
