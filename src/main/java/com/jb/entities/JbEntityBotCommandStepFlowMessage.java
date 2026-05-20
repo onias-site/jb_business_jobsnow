@@ -36,6 +36,19 @@ public class JbEntityBotCommandStepFlowMessage implements CcpEntityConfigurator 
 		@CcpJsonFieldValidatorRequired
 		@CcpJsonFieldTypeString
 		message, 
+		@CcpJsonFieldValidatorRequired
+		@CcpJsonFieldTypeString
+		type,
+
+		@CcpJsonFieldTypeString
+		caption,
+		
+		@CcpJsonFieldTypeString
+		contentType,
+		
+		@CcpJsonFieldTypeString
+		fileName
+
 		;
 	}
 	

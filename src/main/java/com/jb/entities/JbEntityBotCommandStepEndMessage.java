@@ -31,7 +31,23 @@ public class JbEntityBotCommandStepEndMessage implements CcpEntityConfigurator {
 		language, 
 		@CcpJsonFieldValidatorRequired
 		@CcpJsonFieldTypeString
-		message, 
+		message,
+		
+		//TODO DEFAULT VALUE
+		@CcpJsonFieldValidatorRequired
+		@CcpJsonFieldTypeString
+		type,
+
+		//ATTENTION PODE SER DE IDIOMA DIFERENTE
+		@CcpJsonFieldTypeString
+		caption,
+		
+		@CcpJsonFieldTypeString
+		contentType, 
+		
+		@CcpJsonFieldTypeString
+		fileName
+		
 		;
 	}
 

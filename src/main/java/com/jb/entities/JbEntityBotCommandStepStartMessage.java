@@ -16,6 +16,7 @@ import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityFactor
 import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityMetaData;
 import com.ccp.especifications.db.utils.entity.decorators.interfaces.CcpEntityConfigurator;
 import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityFieldPrimaryKey;
+import com.ccp.especifications.http.CcpHttpContentType;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
 import com.jb.business.bots.engine.JbSupportBotCommands;
@@ -43,6 +44,19 @@ public class JbEntityBotCommandStepStartMessage implements CcpEntityConfigurator
 		@CcpJsonFieldValidatorRequired
 		@CcpJsonFieldTypeString
 		message, 
+		@CcpJsonFieldValidatorRequired
+		@CcpJsonFieldTypeString
+		type,
+
+		@CcpJsonFieldTypeString
+		caption,
+		
+		@CcpJsonFieldTypeString
+		contentType,
+		
+		@CcpJsonFieldTypeString
+		fileName
+
 		;
 	}
 	
@@ -61,12 +75,15 @@ public class JbEntityBotCommandStepStartMessage implements CcpEntityConfigurator
 	
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
 		
-		String message = "O usuário '{" + JnEntityLoginTokenRequestResend.Fields.email + "}' alega que {alegation}. Favor encaminhar a mensagem abaixo com o assunto {subject}:\n\n {message}";
+		String caption = "O usuário '{" + JnEntityLoginTokenRequestResend.Fields.email + "}' alega que {alegation}. Favor encaminhar a mensagem abaixo com o assunto {subject}:\n\n {message}";
 		
 		CcpJsonRepresentation endMessage = CcpOtherConstants.EMPTY_JSON
 		.put(Fields.stepName, JbSupportBotCommands.solveLoginTokenTicket.name())
+		.put(Fields.contentType, CcpHttpContentType.TEXT_HTML.name())
 		.put(Fields.language, JnLanguage.portuguese.name())
-		.put(Fields.message, message)
+		.put(Fields.type, com.jn.business.messages.JnBusinessSendInstantMessage.MessageType.file.name())
+		.put(Fields.message, "{message}")
+		.put(Fields.caption, caption)
 		;
 		
 		CcpBulkItem resend = this.toSystemMessage(JnEntityLoginTokenRequestResend.ENTITY, JnLanguage.portuguese, "não recebeu e-mail com token");
