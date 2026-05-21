@@ -38,7 +38,7 @@ import com.jb.entities.JbEntityBotCommandStepFlowMessage;
 import com.jb.entities.JbEntityBotCommandStepSession;
 import com.jb.entities.JbEntityBotCommandStepStartMessage;
 import com.jb.entities.JbEntityBotExplanation;
-import com.jn.business.messages.JnBusinessSendInstantMessage.MessageType;
+import com.jn.business.messages.JnBusinessSendInstantMessage.JnInstantMessageType;
 import com.jn.utils.JnDeleteKeysFromCache;
 import com.jn.utils.JnSystemProperties;
 
@@ -55,13 +55,13 @@ public class JbBotEngine {
 	private JbBotEngine() {
 		JnSystemProperties systemProperties = new JnSystemProperties();
 		
-		JbBotType[] bots = JbBotType.values();
+		JnBotType[] bots = JnBotType.values();
 		
 		CcpJsonRepresentation[] parametersToSearchBots = new CcpJsonRepresentation[bots.length];
 		List<String> languages = systemProperties.languages();
 		
 		int k = 0;
-		for (JbBotType bot : bots) {
+		for (JnBotType bot : bots) {
 			for (var language : languages) {
 				Supplier<CcpJsonRepresentation> parameterToSearchBot = bot.getParameterToSearchBot();
 				CcpJsonRepresentation parameterToSearchBots = parameterToSearchBot.get();
@@ -79,7 +79,7 @@ public class JbBotEngine {
 		);
 		Map<CcpJsonFieldName, Bot> allBots = new HashMap<>();
 		
-		for (JbBotType botType : bots) {
+		for (JnBotType botType : bots) {
 			Bot bot = new Bot(botType, resultFromSearchBots);
 			allBots.put(botType, bot);
 		}
@@ -166,7 +166,7 @@ public class JbBotEngine {
 		this.allSteps = stepsMap;
 	}
 	
-	public static enum JbBotType implements CcpJsonFieldName{
+	public static enum JnBotType implements CcpJsonFieldName{
 		user {
 			@Override
 			protected boolean isRestricted() {
@@ -210,7 +210,7 @@ public class JbBotEngine {
 		
 		default Bot getBot(CcpJsonRepresentation json) {
 			String name = json.getAsString(JbEntityBot.Fields.botName);
-			JbBotType botType = JbBotType.valueOf(name);
+			JnBotType botType = JnBotType.valueOf(name);
 			var response = JbBotEngine.INSTANCE.allBots.get(botType);
 			return response;
 		}
@@ -254,7 +254,7 @@ public class JbBotEngine {
 			chatId{
 				public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 					Long chatId = json.getAsLongNumber(JbEntityBotCommandStepSession.Fields.chatId);
-					json = MessageType.text.sendMessage(json, "" + chatId);
+					json = JnInstantMessageType.text.sendMessage(json, "" + chatId);
 					return json;
 				}
 			},
@@ -272,7 +272,7 @@ public class JbBotEngine {
 							.replace("]", "")
 							.replace(",", ", ")
 							;
-					CcpJsonRepresentation sendMessage = MessageType.text.sendMessage(json, listedCommands);
+					CcpJsonRepresentation sendMessage = JnInstantMessageType.text.sendMessage(json, listedCommands);
 					return sendMessage;
 				}
 			},
@@ -280,7 +280,7 @@ public class JbBotEngine {
 				public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 					var bot = this.getBot(json);
 					String explanation = bot.getExplanation(json);
-					CcpJsonRepresentation sendMessage = MessageType.text.sendMessage(json, explanation);
+					CcpJsonRepresentation sendMessage = JnInstantMessageType.text.sendMessage(json, explanation);
 					return sendMessage;
 				}
 				
@@ -306,7 +306,7 @@ public class JbBotEngine {
 					JbBotBusiness command = this.getLoadedCommand(json);
 					String explanation = command.getExplanation(json);
 					
-					CcpJsonRepresentation sendMessage = MessageType.text.sendMessage(json, explanation);
+					CcpJsonRepresentation sendMessage = JnInstantMessageType.text.sendMessage(json, explanation);
 					return sendMessage;
 				}
 			}
@@ -326,13 +326,13 @@ public class JbBotEngine {
 	}
 	
 	private static class Bot implements JbBotBusiness{
-		private final JbBotType botType;
+		private final JnBotType botType;
 		private final boolean isRestricted;
 		private final List<String> commands;
 		private final Set<Long> allowedUsers;
 		private final List<CcpJsonRepresentation> explanations;
 
-		private Bot(JbBotType botType, CcpSelectUnionAll resultFromSearchBots) {
+		private Bot(JnBotType botType, CcpSelectUnionAll resultFromSearchBots) {
 			this.explanations = this.loadLabelsWithLanguages(botType.name(), resultFromSearchBots, JbEntityBotExplanation.ENTITY, JbEntityBotExplanation.Fields.botName, JbEntityBotExplanation.Fields.language, JbEntityBotExplanation.Fields.message);
 			this.allowedUsers = this.loadAllowedUsers(botType, resultFromSearchBots);
 			this.commands = this.loadCommands(botType, resultFromSearchBots);
@@ -341,7 +341,7 @@ public class JbBotEngine {
 			
 		}
 		
-		private Set<Long> loadAllowedUsers(JbBotType valueOf, CcpSelectUnionAll resultFromSearchBots) {
+		private Set<Long> loadAllowedUsers(JnBotType valueOf, CcpSelectUnionAll resultFromSearchBots) {
 
 			Supplier<CcpJsonRepresentation> parameterToSearchBot = valueOf.getParameterToSearchBot();
 			CcpJsonRepresentation recordFromUnionAll = JbEntityBotAllowedUser.ENTITY.getRecordFromUnionAll(resultFromSearchBots, parameterToSearchBot);
@@ -350,7 +350,7 @@ public class JbBotEngine {
 			return collect;
 		}
 
-		private List<String> loadCommands(JbBotType valueOf, CcpSelectUnionAll resultFromSearchBots){
+		private List<String> loadCommands(JnBotType valueOf, CcpSelectUnionAll resultFromSearchBots){
 			Supplier<CcpJsonRepresentation> jsonSupplier = valueOf.getParameterToSearchBot();
 			CcpJsonRepresentation recordFromUnionAll = JbEntityBot.ENTITY.getRecordFromUnionAll(resultFromSearchBots, jsonSupplier);
 			List<String> commands = new ArrayList<>(recordFromUnionAll.getAsStringList(JbEntityBot.Fields.commandName));
@@ -373,9 +373,9 @@ public class JbBotEngine {
 			
 			CcpJsonRepresentation message = findFirst.orElseThrow(() -> new RuntimeException("'" + language + "' is missing" ));
 
-			String type = message.getOrDefault(JbEntityBotCommandStepStartMessage.Fields.type, () -> MessageType.text.name());
+			String type = message.getOrDefault(JbEntityBotCommandStepStartMessage.Fields.instantMessageType, () -> JnInstantMessageType.text.name());
 			
-			MessageType valueOf = MessageType.valueOf(type);
+			JnInstantMessageType valueOf = JnInstantMessageType.valueOf(type);
 			
 			CcpJsonRepresentation sendMessage = valueOf.sendMessage(json, message);
 			

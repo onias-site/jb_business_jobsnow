@@ -8,9 +8,11 @@ import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityF
 import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityFactory;
 import com.ccp.especifications.db.utils.entity.decorators.interfaces.CcpEntityConfigurator;
 import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityFieldPrimaryKey;
+import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
-import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
+import com.jn.json.fields.validation.JnJsonCommonsFields;
+import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
 @CcpEntityCache(3600)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
@@ -21,13 +23,13 @@ public class JbEntityBotCommandStepExplanation implements CcpEntityConfigurator 
 	
 	public static enum Fields implements CcpJsonFieldName{
 		@CcpEntityFieldPrimaryKey
-		@CcpJsonFieldTypeString
+		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		stepName, 
 		@CcpEntityFieldPrimaryKey
-		@CcpJsonFieldTypeString
+		@CcpJsonCopyFieldValidationsFrom(JnJsonCommonsFields.class)
 		language,
 		@CcpJsonFieldValidatorRequired
-		@CcpJsonFieldTypeString
+		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		message, 
 		;
 	}

@@ -17,13 +17,16 @@ import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityMetaDa
 import com.ccp.especifications.db.utils.entity.decorators.interfaces.CcpEntityConfigurator;
 import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityFieldPrimaryKey;
 import com.ccp.especifications.http.CcpHttpContentType;
+import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
-import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
 import com.jb.business.bots.engine.JbSupportBotCommands;
+import com.jn.business.messages.JnBusinessSendInstantMessage;
 import com.jn.entities.JnEntityLoginTokenRequestResend;
 import com.jn.entities.JnEntitySystemMessage;
 import com.jn.entities.decorators.JnVersionableEntity;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
+import com.jn.json.fields.validation.JnJsonCommonsFields;
+import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.jn.utils.JnLanguage;
 
 @CcpEntityCache(3600)
@@ -36,25 +39,25 @@ public class JbEntityBotCommandStepStartMessage implements CcpEntityConfigurator
 	
 	public static enum Fields implements CcpJsonFieldName{
 		@CcpEntityFieldPrimaryKey
-		@CcpJsonFieldTypeString
+		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		stepName, 
 		@CcpEntityFieldPrimaryKey
-		@CcpJsonFieldTypeString
+		@CcpJsonCopyFieldValidationsFrom(JnJsonCommonsFields.class)
 		language, 
 		@CcpJsonFieldValidatorRequired
-		@CcpJsonFieldTypeString
+		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		message, 
 		@CcpJsonFieldValidatorRequired
-		@CcpJsonFieldTypeString
-		type,
+		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
+		instantMessageType,
 
-		@CcpJsonFieldTypeString
+		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		caption,
 		
-		@CcpJsonFieldTypeString
+		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		contentType,
 		
-		@CcpJsonFieldTypeString
+		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		fileName
 
 		;
@@ -64,7 +67,7 @@ public class JbEntityBotCommandStepStartMessage implements CcpEntityConfigurator
 		
 		CcpJsonRepresentation json = CcpOtherConstants.EMPTY_JSON
 		.put(JnEntitySystemMessage.Fields.language, language.name())
-		.put(JnEntitySystemMessage.Fields.systemMessageName, entity.name())
+		.put(JnEntitySystemMessage.Fields.systemMessageName, entity)
 		.put(JnEntitySystemMessage.Fields.message, message)
 		;
 
@@ -78,10 +81,10 @@ public class JbEntityBotCommandStepStartMessage implements CcpEntityConfigurator
 		String caption = "O usuário '{" + JnEntityLoginTokenRequestResend.Fields.email + "}' alega que {alegation}. Favor encaminhar a mensagem abaixo com o assunto {subject}:\n\n {message}";
 		
 		CcpJsonRepresentation endMessage = CcpOtherConstants.EMPTY_JSON
-		.put(Fields.stepName, JbSupportBotCommands.solveLoginTokenTicket.name())
-		.put(Fields.contentType, CcpHttpContentType.TEXT_HTML.name())
-		.put(Fields.language, JnLanguage.portuguese.name())
-		.put(Fields.type, com.jn.business.messages.JnBusinessSendInstantMessage.MessageType.file.name())
+		.put(Fields.stepName, JbSupportBotCommands.solveLoginTokenTicket)
+		.put(Fields.contentType, CcpHttpContentType.TEXT_HTML)
+		.put(Fields.language, JnLanguage.portuguese)
+		.put(Fields.instantMessageType, JnBusinessSendInstantMessage.JnInstantMessageType.file)
 		.put(Fields.message, "{message}")
 		.put(Fields.caption, caption)
 		;

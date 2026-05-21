@@ -10,12 +10,12 @@ import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityFactor
 import com.ccp.especifications.db.utils.entity.decorators.enums.CcpEntityExpurgableOptions;
 import com.ccp.especifications.db.utils.entity.decorators.interfaces.CcpEntityConfigurator;
 import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityFieldPrimaryKey;
+import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNestedJson;
-import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNumberInteger;
-import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
 import com.jn.entities.decorators.JnDisposableEntity;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
+import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
 @CcpEntityCache(3600)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
@@ -29,19 +29,19 @@ public class JbEntityBotCommandStepSession implements CcpEntityConfigurator {
 
 
 		@CcpEntityFieldPrimaryKey
-		@CcpJsonFieldTypeNumberInteger
+		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		chatId,
 
 		@CcpEntityFieldPrimaryKey
-		@CcpJsonFieldTypeString
+		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		botName, 
 
 		@CcpJsonFieldValidatorRequired
-		@CcpJsonFieldTypeString
+		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		commandName, 
 
 		@CcpJsonFieldValidatorRequired
-		@CcpJsonFieldTypeString
+		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		stepName, 
 		
 		@CcpJsonFieldValidatorRequired

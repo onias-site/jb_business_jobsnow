@@ -15,11 +15,13 @@ import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityV
 import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityFactory;
 import com.ccp.especifications.db.utils.entity.decorators.interfaces.CcpEntityConfigurator;
 import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityFieldPrimaryKey;
+import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorArray;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jn.entities.decorators.JnVersionableEntity;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
+import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
 @CcpEntityCache(3600)
 @CcpEntityVersionable(JnVersionableEntity.class)
@@ -31,7 +33,7 @@ public class JbEntityBotCommand implements CcpEntityConfigurator {
 	
 	public static enum Fields implements CcpJsonFieldName{
 		@CcpEntityFieldPrimaryKey
-		@CcpJsonFieldTypeString
+		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		commandName, 
 		
 		@CcpJsonFieldTypeString(allowsEmptyString = false)
