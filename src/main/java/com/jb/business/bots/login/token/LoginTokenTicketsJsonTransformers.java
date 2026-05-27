@@ -10,7 +10,6 @@ import java.util.function.Supplier;
 import com.ccp.business.CcpBusiness;
 import com.ccp.constantes.CcpOtherConstants;
 import com.ccp.decorators.CcpJsonRepresentation;
-import com.ccp.decorators.CcpJsonRepresentation.CcpDynamicJsonRepresentation;
 import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
 import com.ccp.dependency.injection.CcpDependencyInjection;
 import com.ccp.especifications.db.crud.CcpCrud;
@@ -103,8 +102,7 @@ enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 			String fieldNameToEntity = dependency.getFieldNameToEntity();
 			CcpJsonRepresentation ticket = listValues.get(counter);
 			CcpJsonRepresentation jsonWithTicket = json.mergeWithAnotherJson(ticket);
-			CcpDynamicJsonRepresentation dynamicVersion = jsonWithTicket.getDynamicVersion();
-			String entityName = dynamicVersion.getAsString(fieldNameToEntity);
+			String entityName = jsonWithTicket.getAsString(() -> fieldNameToEntity);
 			CcpEntity entity = entities.get(entityName);
 			CcpJsonRepresentation allDataAboutTicketSolution = entity.delete(jsonWithTicket);
 			CcpJsonRepresentation ticketWithAllDataAboutTicketSolution = allDataAboutTicketSolution.mergeWithAnotherJson(allDataAboutTicketSolution);

@@ -612,7 +612,7 @@ public class JbBotEngine {
 					break;
 				}
 				String parameterValue = parameterValues.get(k++);
-				json = json.getDynamicVersion().put(parameterName, parameterValue);
+				json = json.put(() -> parameterName, parameterValue);
 			}
 			
 			return json;
