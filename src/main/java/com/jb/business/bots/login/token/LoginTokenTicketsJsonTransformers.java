@@ -9,6 +9,7 @@ import java.util.function.Supplier;
 
 import com.ccp.business.CcpBusiness;
 import com.ccp.constantes.CcpOtherConstants;
+import com.ccp.decorators.CcpFieldName;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
 import com.ccp.dependency.injection.CcpDependencyInjection;
@@ -62,8 +63,8 @@ enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 
 		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 
-			CcpJsonFieldName entityName = () -> CcpDependencyInjection.getDependency(CcpDbRequester.class).getFieldNameToEntity();
-			
+			CcpJsonFieldName entityName = new CcpFieldName(CcpDependencyInjection.getDependency(CcpDbRequester.class).getFieldNameToEntity());
+
 			Supplier<CcpJsonRepresentation> jsonSupplier = () -> json.duplicateValueFromField(entityName, JnEntitySystemMessage.Fields.systemMessageName);
 
 			CcpJsonRepresentation parametersToSearch = jsonSupplier.get();
@@ -102,7 +103,7 @@ enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 			String fieldNameToEntity = dependency.getFieldNameToEntity();
 			CcpJsonRepresentation ticket = listValues.get(counter);
 			CcpJsonRepresentation jsonWithTicket = json.mergeWithAnotherJson(ticket);
-			String entityName = jsonWithTicket.getAsString(() -> fieldNameToEntity);
+			String entityName = jsonWithTicket.getAsString(new CcpFieldName(fieldNameToEntity));
 			CcpEntity entity = entities.get(entityName);
 			CcpJsonRepresentation allDataAboutTicketSolution = entity.delete(jsonWithTicket);
 			CcpJsonRepresentation ticketWithAllDataAboutTicketSolution = allDataAboutTicketSolution.mergeWithAnotherJson(allDataAboutTicketSolution);

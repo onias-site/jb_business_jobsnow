@@ -5,6 +5,7 @@ import static com.jb.business.bots.login.token.LoginTokenTicketsJsonTransformers
 import java.util.List;
 import java.util.function.Predicate;
 
+import com.ccp.decorators.CcpFieldName;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
 import com.ccp.dependency.injection.CcpDependencyInjection;
@@ -41,7 +42,7 @@ public enum LoginTokenTicketsJsonConditions implements Predicate<CcpJsonRepresen
 
 	static String getAlegation(CcpJsonRepresentation json) {
 		
-		CcpJsonFieldName entityName = () -> CcpDependencyInjection.getDependency(CcpDbRequester.class).getFieldNameToEntity();
+		CcpJsonFieldName entityName = new CcpFieldName(CcpDependencyInjection.getDependency(CcpDbRequester.class).getFieldNameToEntity());
 
 		CcpJsonFieldName language = json.getAsStringDecorator(JbEntityBotExplanation.Fields.language).jsonFieldName();
 		

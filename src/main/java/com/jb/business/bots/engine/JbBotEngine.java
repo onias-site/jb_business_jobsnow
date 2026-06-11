@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import com.ccp.business.CcpBusiness;
 import com.ccp.constantes.CcpOtherConstants;
+import com.ccp.decorators.CcpFieldName;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
 import com.ccp.decorators.CcpReflectionConstructorDecorator;
@@ -195,7 +196,7 @@ public class JbBotEngine {
 		abstract protected boolean isRestricted();
 	}
 	
-	public static interface JbBotBusiness extends CcpBusiness, CcpJsonFieldName{
+	public static interface JbBotBusiness extends CcpBusiness{
 		default String name() {
 			return this.getClass().getName();
 		}
@@ -612,7 +613,7 @@ public class JbBotEngine {
 					break;
 				}
 				String parameterValue = parameterValues.get(k++);
-				json = json.put(() -> parameterName, parameterValue);
+				json = json.put(new CcpFieldName(parameterName), parameterValue);
 			}
 			
 			return json;
