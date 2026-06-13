@@ -26,6 +26,11 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 @CcpEntityCache(3600)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBot.Fields.class)
+/**
+ * Entidade que representa um bot cadastrado no sistema. Armazena o nome do bot e a lista de
+ * comandos disponíveis. Cache de 1 hora. Dados iniciais inserem o bot de suporte com o comando
+ * {@code solveLoginTokenTicket}.
+ */
 public class JbEntityBot implements CcpEntityConfigurator {
 
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBot.class).entityInstance;

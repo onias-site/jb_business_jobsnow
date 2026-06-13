@@ -26,6 +26,12 @@ import com.jn.entities.JnEntityLoginTokenRequestUnlock;
 import com.jn.entities.JnEntitySystemMessage;
 import com.jn.utils.JnDeleteKeysFromCache;
 
+/**
+ * Transformadores de JSON que encapsulam as operações de leitura, seleção e resolução de
+ * tickets de token de login pendentes (Unlock e Resend). Inclui {@code readAllLoginTokenTicketsFunction},
+ * {@code solveLoginTokenTicketsFunction}, {@code searchAlegations}, {@code chooseOneAlegation} e
+ * {@code throwNewHasNoMoreLoginTokenTicketsToSolve}.
+ */
 enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 	readAllLoginTokenTicketsFunction{
 		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {

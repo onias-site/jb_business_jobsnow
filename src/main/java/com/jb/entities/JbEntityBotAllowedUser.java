@@ -25,6 +25,10 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 @CcpEntityCache(3600)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotAllowedUser.Fields.class)
+/**
+ * Entidade que armazena os usuários autorizados a usar um bot restrito. Cache de 1 hora.
+ * Dados iniciais configuram o chatId {@code 751717896L} como usuário permitido do bot de suporte.
+ */
 public class JbEntityBotAllowedUser implements CcpEntityConfigurator {
 
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotAllowedUser.class).entityInstance;

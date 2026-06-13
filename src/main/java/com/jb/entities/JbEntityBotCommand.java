@@ -27,6 +27,10 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 @CcpEntityVersionable(JnVersionableEntity.class)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommand.Fields.class)
+/**
+ * Entidade que representa um comando de bot com seus parâmetros nomeados. Versionável e com
+ * cache de 1 hora. Dados iniciais registram {@code solveLoginTokenTicket} sem parâmetros.
+ */
 public class JbEntityBotCommand implements CcpEntityConfigurator {
 
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommand.class).entityInstance;

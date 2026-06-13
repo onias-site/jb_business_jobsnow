@@ -29,6 +29,11 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 @CcpEntityVersionable(JnVersionableEntity.class)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandStep.Fields.class)
+/**
+ * Entidade que define um passo de um comando de bot: o motor de negócio a instanciar via
+ * reflexão ({@code engine}), o próximo passo ({@code nextStep}) e o mapeamento de status de
+ * erro para passos alternativos ({@code stepFlow}). Versionável, cache de 1 hora.
+ */
 public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommandStep.class).entityInstance;

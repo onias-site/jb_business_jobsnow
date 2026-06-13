@@ -27,6 +27,10 @@ import com.jn.utils.JnLanguage;
 @CcpEntityVersionable(JnVersionableEntity.class)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandExplanation.Fields.class)
+/**
+ * Entidade que armazena a explicação de um comando de bot em um idioma específico. Versionável
+ * e com cache de 1 hora. Usada pelo passo {@code explainThisCommand}.
+ */
 public class JbEntityBotCommandExplanation implements CcpEntityConfigurator {
 
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommandExplanation.class).entityInstance;

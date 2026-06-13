@@ -24,6 +24,10 @@ import com.jn.utils.JnLanguage;
 @CcpEntityCache(3600)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotExplanation.Fields.class)
+/**
+ * Entidade que armazena a descrição geral de um bot em cada idioma. Cache de 1 hora.
+ * Dados iniciais inserem as explicações em português dos bots {@code support} e {@code user}.
+ */
 public class JbEntityBotExplanation implements CcpEntityConfigurator {
 
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotExplanation.class).entityInstance;

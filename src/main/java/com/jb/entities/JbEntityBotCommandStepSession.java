@@ -21,6 +21,12 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandStepSession.Fields.class)
 @CcpEntityDisposable(expurgTime = CcpEntityExpurgableOptions.daily, expurgableEntityFactory = JnDisposableEntity.class)
+/**
+ * Entidade que persiste a sessão corrente de um usuário em um passo de um comando de bot.
+ * Descartável diariamente ({@code @CcpEntityDisposable}) e com cache de 1 hora.
+ * Armazena {@code chatId}, {@code botName}, {@code commandName}, {@code stepName} e o JSON
+ * acumulado da interação.
+ */
 public class JbEntityBotCommandStepSession implements CcpEntityConfigurator {
 
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommandStepSession.class).entityInstance;

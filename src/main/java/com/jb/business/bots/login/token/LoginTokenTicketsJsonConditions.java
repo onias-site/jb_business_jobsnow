@@ -11,6 +11,11 @@ import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
 import com.ccp.dependency.injection.CcpDependencyInjection;
 import com.ccp.especifications.db.utils.CcpDbRequester;
 import com.jb.entities.JbEntityBotExplanation;
+/**
+ * Predicados reutilizáveis para avaliar condições sobre o JSON de tickets de token de login.
+ * {@code hasAlegation} verifica se há alegação no idioma corrente; {@code ifIsTheLastLoginTokenTicket}
+ * verifica se a posição atual é o último ticket da lista.
+ */
 public enum LoginTokenTicketsJsonConditions implements Predicate<CcpJsonRepresentation>{
 
 	hasAlegation{

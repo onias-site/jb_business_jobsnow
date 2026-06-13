@@ -27,6 +27,11 @@ import com.jn.utils.JnLanguage;
 @CcpEntityVersionable(JnVersionableEntity.class)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandName.Fields.class)
+/**
+ * Entidade que armazena o nome localizado de um comando de bot para cada idioma. Versionável
+ * e com cache de 1 hora. O identificador textual do comando no chat é o valor de {@code message}
+ * no idioma do usuário.
+ */
 public class JbEntityBotCommandName implements CcpEntityConfigurator {
 
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommandName.class).entityInstance;

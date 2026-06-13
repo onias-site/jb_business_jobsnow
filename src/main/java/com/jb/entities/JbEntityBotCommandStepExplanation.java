@@ -17,6 +17,10 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 @CcpEntityCache(3600)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandStepExplanation.Fields.class)
+/**
+ * Entidade que armazena a explicação exibida ao usuário quando ocorre um erro de validação
+ * ({@code CcpJsonValidationError}) durante a execução de um passo do bot. Cache de 1 hora.
+ */
 public class JbEntityBotCommandStepExplanation implements CcpEntityConfigurator {
 
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommandStepExplanation.class).entityInstance;

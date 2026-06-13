@@ -21,6 +21,11 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 @CcpEntityVersionable(JnVersionableEntity.class)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandStepEndMessage.Fields.class)
+/**
+ * Entidade que armazena a mensagem enviada ao usuário ao final da execução bem-sucedida de um
+ * passo do bot. Suporta texto e arquivos (campos {@code instantMessageType}, {@code fileName},
+ * {@code caption}, {@code contentType}). Versionável, cache de 1 hora.
+ */
 public class JbEntityBotCommandStepEndMessage implements CcpEntityConfigurator {
 
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommandStepEndMessage.class).entityInstance;

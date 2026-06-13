@@ -43,6 +43,12 @@ import com.jn.business.messages.JnBusinessSendInstantMessage.JnInstantMessageTyp
 import com.jn.utils.JnDeleteKeysFromCache;
 import com.jn.utils.JnSystemProperties;
 
+/**
+ * Motor central dos bots de suporte Telegram do jobsnow. Inicializado como singleton,
+ * carrega do Elasticsearch toda a configuração dos bots (tipos, comandos, passos, mensagens,
+ * usuários permitidos e explicações) e gerencia o fluxo de interação multi-passo: receber
+ * texto do usuário, identificar o bot e o comando, avançar a sessão e enviar respostas.
+ */
 public class JbBotEngine {
 	
 	private static final JbBotEngine INSTANCE = new JbBotEngine();
@@ -54,12 +60,11 @@ public class JbBotEngine {
 	private final Map<CcpJsonFieldName, Bot> allBots;
 	
 	private JbBotEngine() {
-		JnSystemProperties systemProperties = new JnSystemProperties();
 		
 		JnBotType[] bots = JnBotType.values();
 		
 		CcpJsonRepresentation[] parametersToSearchBots = new CcpJsonRepresentation[bots.length];
-		List<String> languages = systemProperties.languages();
+		List<String> languages = JnSystemProperties.INSTANCE.languages();
 		
 		int k = 0;
 		for (JnBotType bot : bots) {

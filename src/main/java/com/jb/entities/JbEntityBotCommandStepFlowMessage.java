@@ -21,6 +21,11 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 @CcpEntityVersionable(JnVersionableEntity.class)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandStepFlowMessage.Fields.class)
+/**
+ * Entidade que armazena mensagens associadas a status específicos de fluxo de erro
+ * ({@code CcpErrorFlowDisturb}). Chave primária: {@code stepName} + {@code status} + {@code language}.
+ * Versionável, cache de 1 hora.
+ */
 public class JbEntityBotCommandStepFlowMessage implements CcpEntityConfigurator {
 
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommandStepFlowMessage.class).entityInstance;

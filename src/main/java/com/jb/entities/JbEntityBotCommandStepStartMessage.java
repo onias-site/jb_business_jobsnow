@@ -33,6 +33,11 @@ import com.jn.utils.JnLanguage;
 @CcpEntityVersionable(JnVersionableEntity.class)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandStepStartMessage.Fields.class)
+/**
+ * Entidade que armazena a mensagem enviada ao usuário ao iniciar um passo do bot. Versionável,
+ * cache de 1 hora. Dados iniciais configuram o template do passo {@code solveLoginTokenTicket}
+ * e duas mensagens de sistema (alegações Resend e Unlock em português).
+ */
 public class JbEntityBotCommandStepStartMessage implements CcpEntityConfigurator {
 
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommandStepStartMessage.class).entityInstance;
