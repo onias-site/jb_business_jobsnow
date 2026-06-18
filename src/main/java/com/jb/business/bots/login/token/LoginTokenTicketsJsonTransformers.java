@@ -1,4 +1,4 @@
-package com.jb.business.bots.login.token;
+﻿package com.jb.business.bots.login.token;
 
 import static com.jb.business.bots.login.token.LoginTokenTicketsJsonConditions.hasAlegation;
 
@@ -8,14 +8,14 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import com.ccp.business.CcpBusiness;
-import com.ccp.constantes.CcpOtherConstants;
+import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpFieldName;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
 import com.ccp.dependency.injection.CcpDependencyInjection;
 import com.ccp.especifications.db.crud.CcpCrud;
-import com.ccp.especifications.db.crud.CcpSelectUnionAll;
-import com.ccp.especifications.db.query.CcpQueryExecutorDecorator;
+import com.ccp.especifications.db.crud.CcpGetEntityId.CcpSelectUnionAll;
+import com.ccp.especifications.db.query.CcpQueryOptions.CcpQueryExecutorDecorator;
 import com.ccp.especifications.db.query.CcpQueryOptions;
 import com.ccp.especifications.db.utils.CcpDbRequester;
 import com.ccp.especifications.db.utils.entity.CcpEntity;

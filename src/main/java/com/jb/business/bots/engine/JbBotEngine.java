@@ -1,4 +1,4 @@
-package com.jb.business.bots.engine;
+﻿package com.jb.business.bots.engine;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.ccp.business.CcpBusiness;
-import com.ccp.constantes.CcpOtherConstants;
+import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpFieldName;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
@@ -21,11 +21,11 @@ import com.ccp.decorators.CcpReflectionConstructorDecorator;
 import com.ccp.decorators.CcpStringDecorator;
 import com.ccp.dependency.injection.CcpDependencyInjection;
 import com.ccp.especifications.db.crud.CcpCrud;
-import com.ccp.especifications.db.crud.CcpSelectUnionAll;
+import com.ccp.especifications.db.crud.CcpGetEntityId.CcpSelectUnionAll;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
 import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityMetaData;
 import com.ccp.flow.CcpErrorFlowDisturb;
-import com.ccp.json.validations.global.engine.CcpJsonValidationError;
+import com.ccp.json.validations.global.engine.CcpJsonValidatorEngine.CcpJsonValidationError;
 import com.jb.business.bots.login.token.JbBotSolveLoginTokenTicket.StepFields;
 import com.jb.entities.JbEntityBot;
 import com.jb.entities.JbEntityBotAllowedUser;
