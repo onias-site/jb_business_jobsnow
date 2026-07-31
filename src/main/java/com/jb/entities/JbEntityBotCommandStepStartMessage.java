@@ -93,7 +93,7 @@ public class JbEntityBotCommandStepStartMessage implements CcpEntityConfigurator
 		.put(Fields.message, "{message}")
 		.put(Fields.caption, caption)
 		;
-		
+		  
 		CcpBulkItem resend = this.toSystemMessage(JnEntityLoginTokenRequestResend.ENTITY, JnLanguage.portuguese, "não recebeu e-mail com token");
 		
 		CcpBulkItem unlock = this.toSystemMessage(JnEntityLoginTokenRequestResend.ENTITY, JnLanguage.portuguese, "teve o token bloqueado");

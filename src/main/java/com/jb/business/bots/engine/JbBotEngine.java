@@ -1,4 +1,4 @@
-﻿package com.jb.business.bots.engine;
+package com.jb.business.bots.engine;
 
 import java.util.ArrayList;
 import java.util.Arrays;

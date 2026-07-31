@@ -1,4 +1,4 @@
-﻿package com.jb.business.bots.login.token;
+package com.jb.business.bots.login.token;
 
 import static com.jb.business.bots.login.token.LoginTokenTicketsJsonConditions.hasAlegation;
 
