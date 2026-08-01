@@ -99,7 +99,7 @@ public class JbEntityBotCommandStepStartMessage implements CcpEntityConfigurator
 		CcpBulkItem unlock = this.toSystemMessage(JnEntityLoginTokenRequestResend.ENTITY, JnLanguage.portuguese, "teve o token bloqueado");
 		
 		List<CcpBulkItem> createBulkItems = new ArrayList<CcpBulkItem>(CcpEntityConfigurator.super.toCreateBulkItems(ENTITY, endMessage));
-		
+		 
 		createBulkItems.add(resend);
 		
 		createBulkItems.add(unlock);

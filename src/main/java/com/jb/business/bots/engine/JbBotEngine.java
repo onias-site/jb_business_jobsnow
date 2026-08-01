@@ -73,7 +73,7 @@ public class JbBotEngine {
 				CcpJsonRepresentation parameterToSearchBots = parameterToSearchBot.get();
 				parametersToSearchBots[k++] = parameterToSearchBots
 						.put(JbEntityBotExplanation.Fields.language, language)
-						;
+						; 
 			}
 		}
 		
@@ -154,7 +154,7 @@ public class JbBotEngine {
 				JbEntityBotCommandStep.ENTITY 
 				);
 		
-		Map<String, JbBotBusiness> stepsMap = new HashMap<>();
+		Map<String, JbBotBusiness> stepsMap = new HashMap<>(); 
 		
 		List<CcpJsonRepresentation> entityRows = resultFromSearchAllSteps.getEntityRows(JbEntityBotCommandStep.ENTITY);
 		
