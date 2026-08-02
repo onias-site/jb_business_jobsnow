@@ -101,7 +101,7 @@ public class JbEntityBotCommandStepStartMessage implements CcpEntityConfigurator
 		List<CcpBulkItem> createBulkItems = new ArrayList<CcpBulkItem>(CcpEntityConfigurator.super.toCreateBulkItems(ENTITY, endMessage));
 		 
 		createBulkItems.add(resend);
-		
+		 
 		createBulkItems.add(unlock);
 
 		return createBulkItems;
