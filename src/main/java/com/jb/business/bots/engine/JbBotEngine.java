@@ -509,7 +509,7 @@ public class JbBotEngine {
 			
 			Predicate<JbBotBusiness> condition = comm -> false == comm.hasPriority(newJson);
 			CcpJsonRepresentation newInteraction = this.getHandledJson(command, newJson, condition, JsonProducers.newSessionProducer);
-			CcpJsonRepresentation apply = command.apply(newInteraction);
+			CcpJsonRepresentation apply = command.execute(newInteraction);
 			
 			return apply;
 		} 
@@ -522,7 +522,7 @@ public class JbBotEngine {
 				return json;
 			}
 			
-			CcpJsonRepresentation apply = jsonTransformer.apply(json);
+			CcpJsonRepresentation apply = jsonTransformer.execute(json);
 			return apply;
 		} 
 		
@@ -599,7 +599,7 @@ public class JbBotEngine {
 			
 			json = this.putParameters(json);
 			
-			CcpJsonRepresentation apply = step.apply(json);
+			CcpJsonRepresentation apply = step.execute(json);
 
 			return apply;
 		}
@@ -823,7 +823,7 @@ public class JbBotEngine {
 					CcpJsonRepresentation savedSession = this.saveSession(jsonPreservingUmmatableFields, nextStep);
 					return savedSession;
 				};
-				CcpBusiness removeSession = ex -> CommonsBotCommandStep.removeSession.apply(e.json);
+				CcpBusiness removeSession = ex -> CommonsBotCommandStep.removeSession.execute(e.json);
 				
 				CcpJsonRepresentation result = e.json.getTransformedJsonConsideringIfAnyOfTheConditionsIsMet(updateSession, removeSession, conditionIfHasMoreSession);
 				
