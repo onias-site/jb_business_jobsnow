@@ -2,7 +2,6 @@ package com.jb.entities;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
@@ -71,9 +70,9 @@ public class JbEntityBotCommandStepStartMessage implements CcpEntityConfigurator
 	private CcpBulkItem toSystemMessage(CcpEntity entity, JnLanguage language, String message) {
 		
 		CcpJsonRepresentation json = CcpOtherConstants.EMPTY_JSON
-		.put(JnEntitySystemMessage.Fields.language, language.name())
+		.put(JnJsonCommonsFields.language, language.name())
 		.put(JnEntitySystemMessage.Fields.systemMessageName, entity)
-		.put(JnEntitySystemMessage.Fields.message, message)
+		.put(JnJsonCommonsFields.message, message)
 		;
 
 		CcpEntityMetaData entityMetaData = JnEntitySystemMessage.ENTITY.getEntityMetaData();
@@ -83,7 +82,7 @@ public class JbEntityBotCommandStepStartMessage implements CcpEntityConfigurator
 	
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
 		
-		String caption = "O usuário '{" + JnEntityLoginTokenRequestResend.Fields.email + "}' alega que {alegation}. Favor encaminhar a mensagem abaixo com o assunto {subject}:\n\n {message}";
+		String caption = "O usuário '{" + JnJsonCommonsFields.email + "}' alega que {alegation}. Favor encaminhar a mensagem abaixo com o assunto {subject}:\n\n {message}";
 		
 		CcpJsonRepresentation endMessage = CcpOtherConstants.EMPTY_JSON
 		.put(Fields.stepName, JbSupportBotCommands.solveLoginTokenTicket)

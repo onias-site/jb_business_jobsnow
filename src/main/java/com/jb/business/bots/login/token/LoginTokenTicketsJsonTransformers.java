@@ -1,12 +1,10 @@
 package com.jb.business.bots.login.token;
 
 import static com.jb.business.bots.login.token.LoginTokenTicketsJsonConditions.hasAlegation;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-
 import com.ccp.business.CcpBusiness;
 import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpFieldName;
@@ -25,6 +23,7 @@ import com.jn.entities.JnEntityLoginTokenRequestResend;
 import com.jn.entities.JnEntityLoginTokenRequestUnlock;
 import com.jn.entities.JnEntitySystemMessage;
 import com.jn.utils.JnDeleteKeysFromCache;
+import com.jn.json.fields.validation.JnJsonCommonsFields;
 
 /**
  * Transformadores de JSON que encapsulam as operações de leitura, seleção e resolução de
@@ -43,7 +42,7 @@ enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 			String fieldNameToEntity = dependency.getFieldNameToEntity();
 			
 			List<CcpJsonRepresentation> resultAsList = selectFrom.getResultAsList(
-					JnEntityLoginTokenRequestResend.Fields.email.name(),
+					JnJsonCommonsFields.email.name(),
 					fieldNameToEntity
 					);
 			
@@ -81,7 +80,7 @@ enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 			
 			CcpJsonRepresentation systemMessage = JnEntitySystemMessage.ENTITY.getRecordFromUnionAll(resultFromSearchBots, jsonSupplier);
 			
-			String alegation = systemMessage.getAsString(JnEntitySystemMessage.Fields.message);
+			String alegation = systemMessage.getAsString(JnJsonCommonsFields.message);
 
 			CcpJsonRepresentation put = json.put(OtherFields.alegation, alegation);
 			
