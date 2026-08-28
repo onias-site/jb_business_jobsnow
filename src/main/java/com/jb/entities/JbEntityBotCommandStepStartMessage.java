@@ -21,6 +21,7 @@ import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jn.business.messages.JnBusinessSendInstantMessage;
 import com.jn.entities.JnEntityLoginTokenRequestResend;
+import com.jn.entities.JnEntityLoginTokenRequestUnlock;
 import com.jn.entities.JnEntitySystemMessage;
 import com.jn.entities.decorators.JnVersionableEntity;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
@@ -71,7 +72,7 @@ public class JbEntityBotCommandStepStartMessage implements CcpEntityConfigurator
 		
 		CcpJsonRepresentation json = CcpOtherConstants.EMPTY_JSON
 		.put(JnJsonCommonsFields.language, language.name())
-		.put(JnEntitySystemMessage.Fields.systemMessageName, entity)
+		.put(JnEntitySystemMessage.Fields.systemMessageName, entity.name())
 		.put(JnJsonCommonsFields.message, message)
 		;
 
@@ -95,7 +96,7 @@ public class JbEntityBotCommandStepStartMessage implements CcpEntityConfigurator
 		  
 		CcpBulkItem resend = this.toSystemMessage(JnEntityLoginTokenRequestResend.ENTITY, JnLanguage.portuguese, "não recebeu e-mail com token");
 		
-		CcpBulkItem unlock = this.toSystemMessage(JnEntityLoginTokenRequestResend.ENTITY, JnLanguage.portuguese, "teve o token bloqueado");
+		CcpBulkItem unlock = this.toSystemMessage(JnEntityLoginTokenRequestUnlock.ENTITY, JnLanguage.portuguese, "teve o token bloqueado");
 		
 		List<CcpBulkItem> createBulkItems = new ArrayList<CcpBulkItem>(CcpEntityConfigurator.super.toCreateBulkItems(ENTITY, endMessage));
 		 
