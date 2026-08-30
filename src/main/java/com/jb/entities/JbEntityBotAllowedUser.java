@@ -18,7 +18,7 @@ import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFr
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorArray;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNumberUnsigned;
-import com.jb.business.bots.engine.JbBotEngine.JnBotType;
+import com.jb.business.bots.engine.JbBotEngine.JbBotType;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
@@ -51,7 +51,7 @@ public class JbEntityBotAllowedUser implements CcpEntityConfigurator {
 		List<Long> allowedUser = Arrays.asList(751717896L);
 		
 		CcpJsonRepresentation data = CcpOtherConstants.EMPTY_JSON
-		.put(Fields.botName, JnBotType.support.name())
+		.put(Fields.botName, JbBotType.support.name())
 		.put(Fields.allowedUser, allowedUser);
 		
 		

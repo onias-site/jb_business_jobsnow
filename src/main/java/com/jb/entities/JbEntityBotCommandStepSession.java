@@ -15,6 +15,7 @@ import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNestedJson;
 import com.jn.entities.decorators.JnDisposableEntity;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
+import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
 @CcpEntityCache(3600)
@@ -52,7 +53,12 @@ public class JbEntityBotCommandStepSession implements CcpEntityConfigurator {
 		
 		@CcpJsonFieldValidatorRequired
 		@CcpJsonFieldTypeNestedJson
-		json
+		json,
+		
+		@CcpJsonFieldValidatorRequired
+		@CcpJsonCopyFieldValidationsFrom(JnJsonCommonsFields.class)
+		language,
+
 
 		;
 		

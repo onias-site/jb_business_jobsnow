@@ -14,7 +14,7 @@ import com.ccp.especifications.db.utils.entity.decorators.interfaces.CcpEntityCo
 import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityFieldPrimaryKey;
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
-import com.jb.business.bots.engine.JbBotEngine.JnBotType;
+import com.jb.business.bots.engine.JbBotEngine.JbBotType;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
@@ -50,12 +50,12 @@ public class JbEntityBotExplanation implements CcpEntityConfigurator {
 		CcpJsonRepresentation support = CcpOtherConstants.EMPTY_JSON
 		.put(Fields.message, "Bot de rotinas administrativas que só podem ser acessadas por usuários cadastrados")
 		.put(Fields.language, JnLanguage.portuguese.name())
-		.put(Fields.botName, JnBotType.support.name())
+		.put(Fields.botName, JbBotType.support.name())
 		;
 		CcpJsonRepresentation user = CcpOtherConstants.EMPTY_JSON
 		.put(Fields.message, "Bot de rotinas públicas que podem ser acessadas por todos os usuários")
 		.put(Fields.language, JnLanguage.portuguese.name())
-		.put(Fields.botName, JnBotType.user.name())
+		.put(Fields.botName, JbBotType.user.name())
 		;
 		
 		

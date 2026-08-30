@@ -18,7 +18,7 @@ import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityField
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorArray;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
-import com.jb.business.bots.engine.JbBotEngine.JnBotType;
+import com.jb.business.bots.engine.JbBotEngine.JbBotType;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
@@ -53,7 +53,7 @@ public class JbEntityBot implements CcpEntityConfigurator {
 		List<String> commandName = Arrays.asList(JbSupportBotCommands.values()).stream().map(x -> x.name()).collect(Collectors.toList());
 		
 		CcpJsonRepresentation supportBot = CcpOtherConstants.EMPTY_JSON
-		.put(Fields.botName, JnBotType.support)
+		.put(Fields.botName, JbBotType.support)
 		.put(Fields.commandName, commandName)
 		;
 		

@@ -2,6 +2,7 @@ package com.jb.entities;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
@@ -18,6 +19,7 @@ import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityField
 import com.ccp.especifications.http.CcpHttpContentType;
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
+import com.jb.business.bots.engine.JbBotEngine.CcpDefaultBotCommandStep;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jn.business.messages.JnBusinessSendInstantMessage;
 import com.jn.entities.JnEntityLoginTokenRequestResend;
@@ -93,12 +95,18 @@ public class JbEntityBotCommandStepStartMessage implements CcpEntityConfigurator
 		.put(Fields.message, "{message}")
 		.put(Fields.caption, caption)
 		;
-		  
+		CcpJsonRepresentation showAllCommands = CcpOtherConstants.EMPTY_JSON
+		.put(Fields.stepName, CcpDefaultBotCommandStep.showAllCommands.name())
+		.put(Fields.language, JnLanguage.portuguese.name())
+		.put(Fields.message, "O comando digitado é inválido, abaixo uma lista válida de comandos:")
+		.put(Fields.instantMessageType, JnBusinessSendInstantMessage.JnInstantMessageType.text)
+		;
+	  
 		CcpBulkItem resend = this.toSystemMessage(JnEntityLoginTokenRequestResend.ENTITY, JnLanguage.portuguese, "não recebeu e-mail com token");
 		
 		CcpBulkItem unlock = this.toSystemMessage(JnEntityLoginTokenRequestUnlock.ENTITY, JnLanguage.portuguese, "teve o token bloqueado");
 		
-		List<CcpBulkItem> createBulkItems = new ArrayList<CcpBulkItem>(CcpEntityConfigurator.super.toCreateBulkItems(ENTITY, endMessage));
+		List<CcpBulkItem> createBulkItems = new ArrayList<CcpBulkItem>(CcpEntityConfigurator.super.toCreateBulkItems(ENTITY, endMessage, showAllCommands));
 		 
 		createBulkItems.add(resend);
 		 
