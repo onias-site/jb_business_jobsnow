@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpJsonRepresentation;
-import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
+import com.ccp.decorators.CcpJsonFieldName;
 import com.ccp.especifications.db.bulk.CcpBulkItem;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCache;
@@ -50,8 +50,10 @@ public class JbEntityBotCommand implements CcpEntityConfigurator {
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
 
 		List<String> parameterName = Arrays.asList();
-		CcpJsonRepresentation data = CcpOtherConstants.EMPTY_JSON
-		.put(Fields.commandName, JbSupportBotCommands.solveLoginTokenTicket.name())
+		String solveLoginTokenTicketName = JbSupportBotCommands.solveLoginTokenTicket.name();
+		CcpJsonRepresentation put = CcpOtherConstants.EMPTY_JSON
+		.put(JnJsonInstantMessengerFields.commandName, solveLoginTokenTicketName);
+		CcpJsonRepresentation data = put
 		.put(Fields.parameterName, parameterName);
 		
 		

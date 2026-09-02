@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpJsonRepresentation;
-import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
+import com.ccp.decorators.CcpJsonFieldName;
 import com.ccp.especifications.db.bulk.CcpBulkItem;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCache;
@@ -59,10 +59,13 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 		String solveLoginTokenTicket = JbSupportBotCommands.solveLoginTokenTicket.name();
 		
 		String engine = JbBotSolveLoginTokenTicket.class.getName();
-		CcpJsonRepresentation solveLoginTokenTicketCommand = CcpOtherConstants.EMPTY_JSON
-				.put(Fields.stepFlow, CcpOtherConstants.EMPTY_JSON)
-				.put(Fields.stepName, solveLoginTokenTicket)
-				.put(Fields.nextStep, solveLoginTokenTicket)
+		CcpJsonRepresentation put = CcpOtherConstants.EMPTY_JSON
+				.put(Fields.stepFlow, CcpOtherConstants.EMPTY_JSON);
+				CcpJsonRepresentation put2 = put
+				.put(JnJsonInstantMessengerFields.stepName, solveLoginTokenTicket);
+				CcpJsonRepresentation put3 = put2
+				.put(Fields.nextStep, solveLoginTokenTicket);
+				CcpJsonRepresentation solveLoginTokenTicketCommand = put3
 				.put(Fields.engine, engine)
 		;
 		

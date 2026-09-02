@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpJsonRepresentation;
-import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
+import com.ccp.decorators.CcpJsonFieldName;
 import com.ccp.especifications.db.bulk.CcpBulkItem;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCache;
@@ -18,10 +18,12 @@ import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityField
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorArray;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
-import com.jb.business.bots.engine.JbBotEngine.JbBotType;
+import com.jb.business.bots.engine.JbBotType;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
+
+import java.util.stream.Stream;
 
 @CcpEntityCache(3600)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
@@ -49,12 +51,16 @@ public class JbEntityBot implements CcpEntityConfigurator {
 	
 	
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
+		JbSupportBotCommands[] jbSupportBotCommandsValues = JbSupportBotCommands.values();
+		Stream<JbSupportBotCommands> stream = Arrays.asList(jbSupportBotCommandsValues).stream();
+		var streamMap = stream.map(x -> x.name());
 
-		List<String> commandName = Arrays.asList(JbSupportBotCommands.values()).stream().map(x -> x.name()).collect(Collectors.toList());
-		
-		CcpJsonRepresentation supportBot = CcpOtherConstants.EMPTY_JSON
-		.put(Fields.botName, JbBotType.support)
-		.put(Fields.commandName, commandName)
+		List<String> commandName = streamMap.collect(Collectors.toList());
+		CcpJsonRepresentation put = CcpOtherConstants.EMPTY_JSON
+		.put(JnJsonInstantMessengerFields.botName, JbBotType.support);
+
+		CcpJsonRepresentation supportBot = put
+		.put(JnJsonInstantMessengerFields.commandName, commandName)
 		;
 		
 		

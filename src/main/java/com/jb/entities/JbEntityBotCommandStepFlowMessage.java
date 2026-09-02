@@ -1,6 +1,11 @@
 package com.jb.entities;
 
-import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
+import java.util.List;
+
+import com.ccp.constants.CcpOtherConstants;
+import com.ccp.decorators.CcpJsonFieldName;
+import com.ccp.decorators.CcpJsonRepresentation;
+import com.ccp.especifications.db.bulk.CcpBulkItem;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCache;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityFieldsTransformer;
@@ -12,10 +17,14 @@ import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityField
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNumberInteger;
+import com.jb.business.bots.engine.JbDefaultBotCommandStep;
+import com.jn.business.messages.JnInstantMessageType;
 import com.jn.entities.decorators.JnVersionableEntity;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
+
+import com.jn.utils.JnLanguage;
 
 @CcpEntityCache(3600)
 @CcpEntityVersionable(JnVersionableEntity.class)
@@ -57,7 +66,28 @@ public class JbEntityBotCommandStepFlowMessage implements CcpEntityConfigurator 
 		fileName
 
 		;
+		
+		
 	}
-	
+		public List<CcpBulkItem> getFirstRecordsToInsert() {
+			String showAllCommandsName = JbDefaultBotCommandStep.showAllCommands.name();
+			CcpJsonRepresentation put8 = CcpOtherConstants.EMPTY_JSON
+			.put(JnJsonInstantMessengerFields.stepName, showAllCommandsName);
+			String portugueseName = JnLanguage.portuguese.name();
+			CcpJsonRepresentation put9 = put8
+			.put(JnJsonCommonsFields.language, portugueseName);
+			CcpJsonRepresentation put10 = put9
+			.put(JnJsonInstantMessengerFields.message, "O comando digitado é inválido, abaixo uma lista válida de comandos:");
+			CcpJsonRepresentation put11 = put10
+			.put(JnJsonCommonsFields.status, 404);
+			
+			CcpJsonRepresentation showAllCommands = put11
+			.put(JnJsonInstantMessengerFields.instantMessageType, JnInstantMessageType.text)
+			;
+
+			List<CcpBulkItem> toCreateBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(ENTITY, showAllCommands);
+		
+			return toCreateBulkItems;
+		}
 	
 }

@@ -9,11 +9,11 @@ import com.ccp.business.CcpBusiness;
 import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpFieldName;
 import com.ccp.decorators.CcpJsonRepresentation;
-import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
+import com.ccp.decorators.CcpJsonFieldName;
 import com.ccp.dependency.injection.CcpDependencyInjection;
 import com.ccp.especifications.db.crud.CcpCrud;
 import com.ccp.especifications.db.crud.CcpSelectUnionAll;
-import com.ccp.especifications.db.query.CcpQueryOptions.CcpQueryExecutorDecorator;
+import com.ccp.especifications.db.query.CcpQueryExecutorDecorator;
 import com.ccp.especifications.db.query.CcpQueryOptions;
 import com.ccp.especifications.db.utils.CcpDbRequester;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
@@ -24,6 +24,7 @@ import com.jn.entities.JnEntityLoginTokenRequestUnlock;
 import com.jn.entities.JnEntitySystemMessage;
 import com.jn.utils.JnDeleteKeysFromCache;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
+import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityMetaData;
 
 /**
  * Transformadores de JSON que encapsulam as operações de leitura, seleção e resolução de
@@ -40,24 +41,28 @@ enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 			CcpQueryExecutorDecorator selectFrom = query.selectFrom(JnEntityLoginTokenRequestResend.ENTITY, JnEntityLoginTokenRequestUnlock.ENTITY);
 			CcpDbRequester dependency = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 			String fieldNameToEntity = dependency.getFieldNameToEntity();
-			
+			String emailName = JnJsonCommonsFields.email.name();
+
 			List<CcpJsonRepresentation> resultAsList = selectFrom.getResultAsList(
-					JnJsonCommonsFields.email.name(),
+					emailName,
 					fieldNameToEntity
 					);
 			
 			boolean hasNoLoginTokenTicket = resultAsList.isEmpty();
 			
 			if(hasNoLoginTokenTicket) {
-				throw new CcpErrorFlowDisturb(CcpOtherConstants.EMPTY_JSON, CcpProcessStatusDefault.NOT_FOUND);
+				CcpErrorFlowDisturb ccpErrorFlowDisturb = new CcpErrorFlowDisturb(CcpOtherConstants.EMPTY_JSON, CcpProcessStatusDefault.NOT_FOUND);
+				throw ccpErrorFlowDisturb;
 			}
 			
 			int listSize = resultAsList.size();
 			int counter = json.getOrDefault(LoginTokenTicketsJsonFields.counter, () -> 0);
-			
-			CcpJsonRepresentation newJson = CcpOtherConstants.EMPTY_JSON
-			.put(LoginTokenTicketsJsonFields.listValues, resultAsList)
-			.put(LoginTokenTicketsJsonFields.listSize, listSize)
+			CcpJsonRepresentation put2 = CcpOtherConstants.EMPTY_JSON
+			.put(LoginTokenTicketsJsonFields.listValues, resultAsList);
+			CcpJsonRepresentation put3 = put2
+			.put(LoginTokenTicketsJsonFields.listSize, listSize);
+
+			CcpJsonRepresentation newJson = put3
 			.put(LoginTokenTicketsJsonFields.counter, counter)
 			;
 			return newJson;
@@ -67,8 +72,9 @@ enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 	searchAlegations{
 
 		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+			String fieldNameToEntity2 = CcpDependencyInjection.getDependency(CcpDbRequester.class).getFieldNameToEntity();
 
-			CcpJsonFieldName entityName = new CcpFieldName(CcpDependencyInjection.getDependency(CcpDbRequester.class).getFieldNameToEntity());
+			CcpJsonFieldName entityName = new CcpFieldName(fieldNameToEntity2);
 
 			Supplier<CcpJsonRepresentation> jsonSupplier = () -> json.duplicateValueFromField(entityName, JnEntitySystemMessage.Fields.systemMessageName);
 
@@ -100,7 +106,8 @@ enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 	
 	solveLoginTokenTicketsFunction{
 		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
-			CcpJsonRepresentation result = json.whenAllFieldsAreFound(readAllLoginTokenTicketsFunction, LoginTokenTicketsJsonFields.values());
+			LoginTokenTicketsJsonFields[] loginTokenTicketsJsonFieldsValues = LoginTokenTicketsJsonFields.values();
+			CcpJsonRepresentation result = json.whenAllFieldsAreFound(readAllLoginTokenTicketsFunction, loginTokenTicketsJsonFieldsValues);
 			List<CcpJsonRepresentation> listValues = result.getAsJsonList(LoginTokenTicketsJsonFields.listValues);
 			Integer counter = result.getAsIntegerNumber(LoginTokenTicketsJsonFields.counter);
 			int position = counter + 1;
@@ -108,18 +115,22 @@ enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 			String fieldNameToEntity = dependency.getFieldNameToEntity();
 			CcpJsonRepresentation ticket = listValues.get(counter);
 			CcpJsonRepresentation jsonWithTicket = json.mergeWithAnotherJson(ticket);
-			String entityName = jsonWithTicket.getAsString(new CcpFieldName(fieldNameToEntity));
+			CcpFieldName ccpFieldName = new CcpFieldName(fieldNameToEntity);
+			String entityName = jsonWithTicket.getAsString(ccpFieldName);
 			CcpEntity entity = entities.get(entityName);
 			CcpJsonRepresentation allDataAboutTicketSolution = entity.delete(jsonWithTicket);
 			CcpJsonRepresentation ticketWithAllDataAboutTicketSolution = allDataAboutTicketSolution.mergeWithAnotherJson(allDataAboutTicketSolution);
+			CcpJsonRepresentation transformedJsonExecutingIfAndElse = ticketWithAllDataAboutTicketSolution
+					.getTransformedJsonExecutingIfAndElse(hasAlegation, CcpOtherConstants.DO_NOTHING, searchAlegations);
 
-			CcpJsonRepresentation ticketWithAlegation = ticketWithAllDataAboutTicketSolution
-					.getTransformedJsonExecutingIfAndElse(hasAlegation, CcpOtherConstants.DO_NOTHING, searchAlegations)
+					CcpJsonRepresentation ticketWithAlegation = transformedJsonExecutingIfAndElse
 					.getTransformedJson(chooseOneAlegation)
 					;
-			
-			CcpJsonRepresentation updatedValues = ticketWithAlegation
-			.put(LoginTokenTicketsJsonFields.counter, counter + 1)
+					int counterMais = counter + 1;
+					CcpJsonRepresentation put4 = ticketWithAlegation
+					.put(LoginTokenTicketsJsonFields.counter, counterMais);
+
+					CcpJsonRepresentation updatedValues = put4
 			.put(LoginTokenTicketsJsonFields.position, position)
 			;
 			return updatedValues;
@@ -138,8 +149,10 @@ enum LoginTokenTicketsJsonTransformers implements CcpBusiness{
 	static Map<String, CcpEntity> entities = new HashMap<>();
 	
 	static {
-		entities.put(JnEntityLoginTokenRequestResend.ENTITY.getEntityMetaData().entityName, JnEntityLoginTokenRequestResend.ENTITY);
-		entities.put(JnEntityLoginTokenRequestUnlock.ENTITY.getEntityMetaData().entityName, JnEntityLoginTokenRequestUnlock.ENTITY);
+		CcpEntityMetaData entityMetaData = JnEntityLoginTokenRequestResend.ENTITY.getEntityMetaData();
+		entities.put(entityMetaData.entityName, JnEntityLoginTokenRequestResend.ENTITY);
+		CcpEntityMetaData entityMetaData2 = JnEntityLoginTokenRequestUnlock.ENTITY.getEntityMetaData();
+		entities.put(entityMetaData2.entityName, JnEntityLoginTokenRequestUnlock.ENTITY);
 	}
 
 }

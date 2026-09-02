@@ -7,15 +7,17 @@ import java.util.function.Predicate;
 
 import com.ccp.decorators.CcpFieldName;
 import com.ccp.decorators.CcpJsonRepresentation;
-import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
+import com.ccp.decorators.CcpJsonFieldName;
 import com.ccp.dependency.injection.CcpDependencyInjection;
 import com.ccp.especifications.db.utils.CcpDbRequester;
-import com.jb.entities.JbEntityBotExplanation;
-/**
+import com.jn.json.fields.validation.JnJsonCommonsFields;
+
+import com.ccp.decorators.CcpStringDecorator;/**
  * Predicados reutilizáveis para avaliar condições sobre o JSON de tickets de token de login.
  * {@code hasAlegation} verifica se há alegação no idioma corrente; {@code ifIsTheLastLoginTokenTicket}
  * verifica se a posição atual é o último ticket da lista.
  */
+
 public enum LoginTokenTicketsJsonConditions implements Predicate<CcpJsonRepresentation>{
 
 	hasAlegation{
@@ -23,8 +25,10 @@ public enum LoginTokenTicketsJsonConditions implements Predicate<CcpJsonRepresen
 		public boolean test(CcpJsonRepresentation json) {
 
 			String alegation = getAlegation(json);
-			
-			boolean hasAlegation = false == alegation.trim().isEmpty();
+			String alegationTrim = alegation.trim();
+			boolean alegationTrimEmpty = alegationTrim.isEmpty();
+
+			boolean hasAlegation = false == alegationTrimEmpty;
 			
 			return hasAlegation;
 		}
@@ -34,22 +38,26 @@ public enum LoginTokenTicketsJsonConditions implements Predicate<CcpJsonRepresen
 	ifIsTheLastLoginTokenTicket{
 
 		public boolean test(CcpJsonRepresentation json) {
-			CcpJsonRepresentation result = json.whenAllFieldsAreFound(readAllLoginTokenTicketsFunction, LoginTokenTicketsJsonFields.values());
+			LoginTokenTicketsJsonFields[] loginTokenTicketsJsonFieldsValues = LoginTokenTicketsJsonFields.values();
+			CcpJsonRepresentation result = json.whenAllFieldsAreFound(readAllLoginTokenTicketsFunction, loginTokenTicketsJsonFieldsValues);
 			List<CcpJsonRepresentation> listValues = result.getAsJsonList(LoginTokenTicketsJsonFields.listValues);
 			Integer counter = result.getAsIntegerNumber(LoginTokenTicketsJsonFields.counter);
 			int position = counter + 1;
+			int listValuesSize = listValues.size();
 
-			boolean isTheLastLoginTokenTicket = position == listValues.size();
+			boolean isTheLastLoginTokenTicket = position == listValuesSize;
 			
 			return isTheLastLoginTokenTicket;
 		}
 	};
 
 	static String getAlegation(CcpJsonRepresentation json) {
-		
-		CcpJsonFieldName entityName = new CcpFieldName(CcpDependencyInjection.getDependency(CcpDbRequester.class).getFieldNameToEntity());
+		String fieldNameToEntity = CcpDependencyInjection.getDependency(CcpDbRequester.class).getFieldNameToEntity();
+	
+		CcpJsonFieldName entityName = new CcpFieldName(fieldNameToEntity);
+		CcpStringDecorator asStringDecorator = json.getAsStringDecorator(JnJsonCommonsFields.language);
 
-		CcpJsonFieldName language = json.getAsStringDecorator(JbEntityBotExplanation.Fields.language).jsonFieldName();
+		CcpJsonFieldName language = asStringDecorator.jsonFieldName();
 		
 		String alegation = json.getValueFromPath("", language, entityName);
 		

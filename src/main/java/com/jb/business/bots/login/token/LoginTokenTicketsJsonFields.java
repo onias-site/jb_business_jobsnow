@@ -1,6 +1,6 @@
 package com.jb.business.bots.login.token;
 
-import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
+import com.ccp.decorators.CcpJsonFieldName;
 
 /**
  * Campos de controle usados no JSON de iteração sobre a lista de tickets de token de login:

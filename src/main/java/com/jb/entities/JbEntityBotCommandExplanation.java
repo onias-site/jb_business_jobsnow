@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpJsonRepresentation;
-import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
+import com.ccp.decorators.CcpJsonFieldName;
 import com.ccp.especifications.db.bulk.CcpBulkItem;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCache;
@@ -21,6 +21,7 @@ import com.jn.entities.decorators.JnVersionableEntity;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
+
 import com.jn.utils.JnLanguage;
 
 @CcpEntityCache(3600)
@@ -50,11 +51,15 @@ public class JbEntityBotCommandExplanation implements CcpEntityConfigurator {
 	}
 	
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
+		String solveLoginTokenTicketName = JbSupportBotCommands.solveLoginTokenTicket.name();
+		CcpJsonRepresentation put = CcpOtherConstants.EMPTY_JSON
+		.put(JnJsonInstantMessengerFields.commandName, solveLoginTokenTicketName);
+		String portugueseName = JnLanguage.portuguese.name();
+		CcpJsonRepresentation put2 = put
+		.put(JnJsonCommonsFields.language, portugueseName);
 
-		CcpJsonRepresentation solveLoginTokenTicket = CcpOtherConstants.EMPTY_JSON
-		.put(Fields.commandName, JbSupportBotCommands.solveLoginTokenTicket.name())
-		.put(Fields.language, JnLanguage.portuguese.name())
-		.put(Fields.message, "Quando o usuário alega que seu token de login está bloqueado ou não foi enviado, ele abre uma solicitação que é recebida pelo time de suporte, então o operador de suporte evoca este comando para solucionar a solicitação que o usuário abriu")
+		CcpJsonRepresentation solveLoginTokenTicket = put2
+		.put(JnJsonInstantMessengerFields.message, "Quando o usuário alega que seu token de login está bloqueado ou não foi enviado, ele abre uma solicitação que é recebida pelo time de suporte, então o operador de suporte evoca este comando para solucionar a solicitação que o usuário abriu")
 		;
 
 		

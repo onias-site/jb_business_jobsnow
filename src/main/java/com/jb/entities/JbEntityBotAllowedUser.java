@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpJsonRepresentation;
-import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
+import com.ccp.decorators.CcpJsonFieldName;
 import com.ccp.especifications.db.bulk.CcpBulkItem;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCache;
@@ -18,7 +18,7 @@ import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFr
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorArray;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNumberUnsigned;
-import com.jb.business.bots.engine.JbBotEngine.JbBotType;
+import com.jb.business.bots.engine.JbBotType;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
@@ -49,9 +49,11 @@ public class JbEntityBotAllowedUser implements CcpEntityConfigurator {
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
 
 		List<Long> allowedUser = Arrays.asList(751717896L);
-		
-		CcpJsonRepresentation data = CcpOtherConstants.EMPTY_JSON
-		.put(Fields.botName, JbBotType.support.name())
+		String supportName = JbBotType.support.name();
+		CcpJsonRepresentation put = CcpOtherConstants.EMPTY_JSON
+		.put(JnJsonInstantMessengerFields.botName, supportName);
+
+		CcpJsonRepresentation data = put
 		.put(Fields.allowedUser, allowedUser);
 		
 		
