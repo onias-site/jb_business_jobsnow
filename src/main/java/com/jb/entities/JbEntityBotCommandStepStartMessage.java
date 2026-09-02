@@ -19,7 +19,7 @@ import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityField
 import com.ccp.especifications.http.CcpHttpContentType;
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
-import com.jb.business.bots.engine.JbBotEngine.CcpDefaultBotCommandStep;
+import com.jb.business.bots.engine.JbBotEngine.JbDefaultBotCommandStep;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jn.business.messages.JnBusinessSendInstantMessage;
 import com.jn.entities.JnEntityLoginTokenRequestResend;
@@ -96,7 +96,7 @@ public class JbEntityBotCommandStepStartMessage implements CcpEntityConfigurator
 		.put(Fields.caption, caption)
 		;
 		CcpJsonRepresentation showAllCommands = CcpOtherConstants.EMPTY_JSON
-		.put(Fields.stepName, CcpDefaultBotCommandStep.showAllCommands.name())
+		.put(Fields.stepName, JbDefaultBotCommandStep.showAllCommands.name())
 		.put(Fields.language, JnLanguage.portuguese.name())
 		.put(Fields.message, "O comando digitado é inválido, abaixo uma lista válida de comandos:")
 		.put(Fields.instantMessageType, JnBusinessSendInstantMessage.JnInstantMessageType.text)
