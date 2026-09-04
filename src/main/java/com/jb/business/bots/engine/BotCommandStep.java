@@ -8,11 +8,12 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.ccp.business.CcpBusiness;
 import com.ccp.constants.CcpOtherConstants;
-import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpJsonFieldName;
+import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpReflectionConstructorDecorator;
 import com.ccp.decorators.CcpStringDecorator;
 import com.ccp.especifications.db.crud.CcpSelectUnionAll;
@@ -24,10 +25,8 @@ import com.jb.entities.JbEntityBotCommandStepExplanation;
 import com.jb.entities.JbEntityBotCommandStepFlowMessage;
 import com.jb.entities.JbEntityBotCommandStepSession;
 import com.jb.entities.JbEntityBotCommandStepStartMessage;
-import java.util.stream.Stream;
-
-import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
+import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
 class BotCommandStep implements JbBotBusiness{
 
@@ -164,7 +163,16 @@ class BotCommandStep implements JbBotBusiness{
 			
 			return result;
 		} catch(CcpJsonValidationError e) {
-			json = bot.sendMessage(json, this.explanations);
+			
+			boolean hasExplanations = false == this.explanations.isEmpty();
+
+			if(hasExplanations) {
+				CcpJsonRepresentation sendMessage = bot.sendMessage(json, this.explanations);
+				return sendMessage;
+			}
+
+			String message = e.getExplanedMessage();
+			json = bot.sendMessage(json, message);
 			return json;
 		} catch (CcpErrorFlowDisturb e) {
 			int asNumber2 = e.status.asNumber();
@@ -189,6 +197,7 @@ class BotCommandStep implements JbBotBusiness{
 			return result;
 		}
 	}
+
 	
 	public String name() {
 		return this.name;

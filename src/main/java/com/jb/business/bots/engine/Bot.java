@@ -14,17 +14,15 @@ import com.ccp.business.CcpBusiness;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.especifications.db.crud.CcpSelectUnionAll;
 import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityMetaData;
-import com.jb.business.bots.login.token.JbBotSolveLoginTokenTicket.StepFields;
 import com.jb.entities.JbEntityBot;
 import com.jb.entities.JbEntityBotAllowedUser;
 import com.jb.entities.JbEntityBotCommandStepSession;
 import com.jb.entities.JbEntityBotExplanation;
 import com.jn.business.messages.JnBusinessSendInstantMessage;
 import com.jn.business.messages.JnInstantMessageType;
-import com.jn.utils.JnLanguage;
-
-import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
+import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
+import com.jn.utils.JnLanguage;
 
 class Bot implements JbBotBusiness{
 	private final JbBotType botType;
@@ -141,7 +139,8 @@ class Bot implements JbBotBusiness{
 			
 			CcpJsonRepresentation session = command.getSession(json);
 			CcpJsonRepresentation innerJson = session.getInnerJson(JnJsonCommonsFields.json);
-			CcpJsonRepresentation mergeWithAnotherJson = innerJson.mergeWithAnotherJson(session);
+			CcpJsonRepresentation removeFields = session.removeFields(JnJsonCommonsFields.json);
+			CcpJsonRepresentation mergeWithAnotherJson = innerJson.mergeWithAnotherJson(removeFields);
 			return mergeWithAnotherJson;
 		}
 		

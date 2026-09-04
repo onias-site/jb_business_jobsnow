@@ -4,8 +4,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.ccp.constants.CcpOtherConstants;
-import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpJsonFieldName;
+import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.especifications.db.bulk.CcpBulkItem;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCache;
@@ -19,8 +19,10 @@ import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFr
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorArray;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
 import com.jb.business.bots.engine.JbSupportBotCommands;
+import com.jb.business.bots.login.token.JbSupportLoginToken;
 import com.jn.entities.decorators.JnVersionableEntity;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
+import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
 @CcpEntityCache(3600)
@@ -49,12 +51,10 @@ public class JbEntityBotCommand implements CcpEntityConfigurator {
 	
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
 
-		List<String> parameterName = Arrays.asList();
 		String solveLoginTokenTicketName = JbSupportBotCommands.solveLoginTokenTicket.name();
-		CcpJsonRepresentation put = CcpOtherConstants.EMPTY_JSON
-		.put(JnJsonInstantMessengerFields.commandName, solveLoginTokenTicketName);
-		CcpJsonRepresentation data = put
-		.put(Fields.parameterName, parameterName);
+		CcpJsonRepresentation put2 = CcpOtherConstants.EMPTY_JSON.put(JnJsonInstantMessengerFields.commandName, solveLoginTokenTicketName);
+		List<?> parameters = Arrays.asList(JbSupportLoginToken.JsonFields.ticketType.name(), JnJsonCommonsFields.email.name());
+		CcpJsonRepresentation data = put2.put(JbEntityBotCommand.Fields.parameterName, parameters);
 		
 		
 		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(

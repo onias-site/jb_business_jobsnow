@@ -3,8 +3,8 @@ package com.jb.entities;
 import java.util.List;
 
 import com.ccp.constants.CcpOtherConstants;
-import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpJsonFieldName;
+import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.especifications.db.bulk.CcpBulkItem;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCache;
@@ -20,7 +20,7 @@ import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNestedJson;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
 import com.jb.business.bots.engine.JbSupportBotCommands;
-import com.jb.business.bots.login.token.JbBotSolveLoginTokenTicket;
+import com.jb.business.bots.login.token.JbSupportLoginToken;
 import com.jn.entities.decorators.JnVersionableEntity;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
@@ -58,14 +58,14 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 
 		String solveLoginTokenTicket = JbSupportBotCommands.solveLoginTokenTicket.name();
 		
-		String engine = JbBotSolveLoginTokenTicket.class.getName();
+		String engine = JbSupportLoginToken.class.getName();
 		CcpJsonRepresentation put = CcpOtherConstants.EMPTY_JSON
 				.put(Fields.stepFlow, CcpOtherConstants.EMPTY_JSON);
 				CcpJsonRepresentation put2 = put
 				.put(JnJsonInstantMessengerFields.stepName, solveLoginTokenTicket);
-				CcpJsonRepresentation put3 = put2
-				.put(Fields.nextStep, solveLoginTokenTicket);
-				CcpJsonRepresentation solveLoginTokenTicketCommand = put3
+//				CcpJsonRepresentation put3 = put2
+//				.put(Fields.nextStep, solveLoginTokenTicket);
+				CcpJsonRepresentation solveLoginTokenTicketCommand = put2
 				.put(Fields.engine, engine)
 		;
 		

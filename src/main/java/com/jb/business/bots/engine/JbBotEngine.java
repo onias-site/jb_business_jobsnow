@@ -199,12 +199,6 @@ public class JbBotEngine {
 		this.allSteps = stepsMap;
 	}
 	
-
-	
-
-	
-
-	
 	static enum Fields implements CcpJsonFieldName{
 		bots, replyTo, commandParameters, message_id
 	}
