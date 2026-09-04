@@ -177,9 +177,11 @@ class BotCommandStep implements JbBotBusiness{
 		} catch (CcpErrorFlowDisturb e) {
 			int asNumber2 = e.status.asNumber();
 		
-			List<CcpJsonRepresentation> messages = this.flowMessage.get(asNumber2);
+			List<CcpJsonRepresentation> messages = this.flowMessage.getOrDefault(asNumber2, new ArrayList<>());
 
 			json = bot.sendMessage(json, messages);
+			
+			CcpJsonRepresentation copy = json.copy();
 			
 			Predicate<CcpJsonRepresentation> conditionIfHasMoreSession = jsn -> this.stepFlow.containsKey(e.status.asNumber());
 			
@@ -190,7 +192,7 @@ class BotCommandStep implements JbBotBusiness{
 				CcpJsonRepresentation savedSession = this.saveSession(jsonPreservingUmmatableFields, nextStep);
 				return savedSession;
 			};
-			CcpBusiness removeSession = ex -> JbDefaultBotCommandStep.removeSession.execute(e.json);
+			CcpBusiness removeSession = ex -> JbDefaultBotCommandStep.removeSession.execute(copy);
 			
 			CcpJsonRepresentation result = e.json.getTransformedJsonConsideringIfAnyOfTheConditionsIsMet(updateSession, removeSession, conditionIfHasMoreSession);
 			

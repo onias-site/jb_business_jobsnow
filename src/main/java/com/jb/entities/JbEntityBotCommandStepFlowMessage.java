@@ -18,6 +18,8 @@ import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFr
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNumberInteger;
 import com.jb.business.bots.engine.JbDefaultBotCommandStep;
+import com.jb.business.bots.engine.JbSupportBotCommands;
+import com.jb.business.bots.login.token.JbSupportLoginToken;
 import com.jn.business.messages.JnInstantMessageType;
 import com.jn.entities.decorators.JnVersionableEntity;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
@@ -84,10 +86,28 @@ public class JbEntityBotCommandStepFlowMessage implements CcpEntityConfigurator 
 			CcpJsonRepresentation showAllCommands = put11
 			.put(JnJsonInstantMessengerFields.instantMessageType, JnInstantMessageType.text)
 			;
+			CcpJsonRepresentation solveLoginTokenTicket = this.solveLoginTokenTicket();
 
-			List<CcpBulkItem> toCreateBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(ENTITY, showAllCommands);
+			List<CcpBulkItem> toCreateBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(ENTITY, showAllCommands, solveLoginTokenTicket);
 		
 			return toCreateBulkItems;
 		}
 	
+		protected CcpJsonRepresentation solveLoginTokenTicket() {
+			String solveLoginTokenTicketName = JbSupportBotCommands.solveLoginTokenTicket.name();
+			CcpJsonRepresentation put8 = CcpOtherConstants.EMPTY_JSON
+			.put(JnJsonInstantMessengerFields.stepName, solveLoginTokenTicketName);
+			String portugueseName = JnLanguage.portuguese.name();
+			CcpJsonRepresentation put9 = put8
+			.put(JnJsonCommonsFields.language, portugueseName);
+			CcpJsonRepresentation put10 = put9
+			.put(JnJsonInstantMessengerFields.message, "O e-mail '{" + JnJsonCommonsFields.email + "}' não possui pendência de '{"  + JbSupportLoginToken.JsonFields.ticketType + "}'");
+			CcpJsonRepresentation put11 = put10
+			.put(JnJsonCommonsFields.status, 404);
+			
+			CcpJsonRepresentation solveLoginTokenTicket = put11
+			.put(JnJsonInstantMessengerFields.instantMessageType, JnInstantMessageType.text)
+			;
+			return solveLoginTokenTicket;
+		}
 }
