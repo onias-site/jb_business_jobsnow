@@ -1,14 +1,10 @@
 package com.jb.business.bots.engine;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.ccp.business.CcpBusiness;
 import com.ccp.constants.CcpOtherConstants;
@@ -20,9 +16,9 @@ import com.ccp.especifications.db.crud.CcpSelectUnionAll;
 import com.ccp.flow.CcpErrorFlowDisturb;
 import com.ccp.json.validations.global.engine.CcpJsonValidationError;
 import com.jb.entities.JbEntityBotCommandStep;
+import com.jb.entities.JbEntityBotCommandStep.JbNextStepFields;
 import com.jb.entities.JbEntityBotCommandStepEndMessage;
 import com.jb.entities.JbEntityBotCommandStepExplanation;
-import com.jb.entities.JbEntityBotCommandStepFlowMessage;
 import com.jb.entities.JbEntityBotCommandStepSession;
 import com.jb.entities.JbEntityBotCommandStepStartMessage;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
@@ -33,11 +29,10 @@ class BotCommandStep implements JbBotBusiness{
 	private final String name;
 	private final String nextStep;
 	private final CcpBusiness engine;
-	private final Map<Integer, String> stepFlow;
 	private final List<CcpJsonRepresentation> endMessages;
 	private final List<CcpJsonRepresentation> explanations;
+	private final Map<Integer, CcpJsonRepresentation> flow;
 	private final List<CcpJsonRepresentation> startMessages;
-	private final Map<Integer, List<CcpJsonRepresentation>> flowMessage;
 	
 	BotCommandStep(String name, CcpSelectUnionAll result) {
 		this(name, loadEngine(name, result), result);
@@ -63,8 +58,7 @@ class BotCommandStep implements JbBotBusiness{
 
 		this.name = name;
 		this.engine = engine;
-		this.stepFlow = this.loadStepFlow(name, result);
-		this.flowMessage = this.loadFlowMessage(name, result);
+		this.flow = this.loadFlow(name, result);
 		this.endMessages = result.getEntityRows(JbEntityBotCommandStepEndMessage.ENTITY);
 		this.nextStep = loadFieldValue(name, result, JbEntityBotCommandStep.Fields.nextStep);
 		this.startMessages = result.getEntityRows(JbEntityBotCommandStepStartMessage.ENTITY);
@@ -89,14 +83,14 @@ class BotCommandStep implements JbBotBusiness{
 		return savedSession;
 	}
 
-	private Map<Integer, String> loadStepFlow(String name, CcpSelectUnionAll result) {
-		Map<Integer, String> stepFlow = new HashMap<>();
+	private Map<Integer, CcpJsonRepresentation> loadFlow(String name, CcpSelectUnionAll result) {
+		Map<Integer, CcpJsonRepresentation> stepFlow = new HashMap<>();
 		CcpJsonRepresentation entityRow = getEntityRow(name, result);
-		List<CcpJsonRepresentation> asJsonList = entityRow.getAsJsonList(JbEntityBotCommandStep.Fields.stepFlow);
-		for (CcpJsonRepresentation json : asJsonList) {
+		List<CcpJsonRepresentation> allNextSteps = entityRow.getAsJsonList(JbEntityBotCommandStep.Fields.stepFlow);
+		for (CcpJsonRepresentation json : allNextSteps) {
 			Integer status = json.getAsIntegerNumber(JnJsonCommonsFields.status);
-			String stepName = json.getAsString(JnJsonInstantMessengerFields.stepName);
-			stepFlow.put(status, stepName);
+			CcpJsonRepresentation nextStep = json.getInnerJson(JnJsonInstantMessengerFields.stepName);
+			stepFlow.put(status, nextStep);
 		}
 		return stepFlow;
 	}
@@ -108,28 +102,6 @@ class BotCommandStep implements JbBotBusiness{
 		return entityRow;
 	}
 	
-	private Map<Integer, List<CcpJsonRepresentation>> loadFlowMessage(String stepName, CcpSelectUnionAll resultFromSearchAllSteps) {
-		List<CcpJsonRepresentation> entityRows = resultFromSearchAllSteps.getEntityRows(JbEntityBotCommandStepFlowMessage.ENTITY);
-		Stream<CcpJsonRepresentation> stream = entityRows.stream();
-		var filter = stream.filter(x -> x.getAsString(JnJsonInstantMessengerFields.stepName).equals(stepName));
-		List<CcpJsonRepresentation> collect = filter.collect(Collectors.toList());
-		var stream2 = new ArrayList<>(collect).stream();
-		var stream2Map = stream2.map(x -> x.getAsIntegerNumber(JnJsonCommonsFields.status));
-		Set<Integer> allStatus = stream2Map
-		.collect(Collectors.toSet());
-
-		var response = new HashMap<Integer, List<CcpJsonRepresentation>>();
-		
-		for (Integer status : allStatus) {
-			var stream3 = new ArrayList<>(collect).stream();
-			var filter2 = stream3.filter(x -> x.getAsIntegerNumber(JnJsonCommonsFields.status).equals(status));
-			List<CcpJsonRepresentation> filtered = filter2.collect(Collectors.toList());
-			response.put(status, filtered);
-		}
-		
-		return response;
-	}
-
 	public String toString() {
 		return this.name;
 	}
@@ -175,28 +147,33 @@ class BotCommandStep implements JbBotBusiness{
 			json = bot.sendMessage(json, message);
 			return json;
 		} catch (CcpErrorFlowDisturb e) {
-			int asNumber2 = e.status.asNumber();
+			int status = e.status.asNumber();
 		
-			List<CcpJsonRepresentation> messages = this.flowMessage.getOrDefault(asNumber2, new ArrayList<>());
+			CcpJsonRepresentation flow = this.flow.getOrDefault(status, CcpOtherConstants.EMPTY_JSON);
+			
+			boolean unforeseenStatus = flow.isEmpty();
+			
+			if(unforeseenStatus) {
+				CcpJsonRepresentation execute = JbDefaultBotCommandStep.removeSession.execute(json);
+				return execute;
+			}
 
-			json = bot.sendMessage(json, messages);
+			List<CcpJsonRepresentation> message = flow.getAsJsonList(JbNextStepFields.message);
 			
-			CcpJsonRepresentation copy = json.copy();
+			json = bot.sendMessage(json, message);
 			
-			Predicate<CcpJsonRepresentation> conditionIfHasMoreSession = jsn -> this.stepFlow.containsKey(e.status.asNumber());
+			String nextStepName = flow.getAsString(JbNextStepFields.nextStep);
 			
-			CcpBusiness updateSession = ex -> {
-				int asNumber = e.status.asNumber();
-				String nextStep = this.stepFlow.get(asNumber);
-				CcpJsonRepresentation jsonPreservingUmmatableFields = e.json.mergeWithAnotherJson(ummutableFields);
-				CcpJsonRepresentation savedSession = this.saveSession(jsonPreservingUmmatableFields, nextStep);
-				return savedSession;
-			};
-			CcpBusiness removeSession = ex -> JbDefaultBotCommandStep.removeSession.execute(copy);
+			boolean hasNoNextStep = nextStepName.isEmpty();
+		
+			if(hasNoNextStep) {
+				CcpJsonRepresentation execute = JbDefaultBotCommandStep.removeSession.execute(json);
+				return execute;
+			}
 			
-			CcpJsonRepresentation result = e.json.getTransformedJsonConsideringIfAnyOfTheConditionsIsMet(updateSession, removeSession, conditionIfHasMoreSession);
-			
-			return result;
+			CcpJsonRepresentation jsonPreservingUmmatableFields = e.json.mergeWithAnotherJson(ummutableFields);
+			CcpJsonRepresentation savedSession = this.saveSession(jsonPreservingUmmatableFields, nextStepName);
+			return savedSession;
 		}
 	}
 
