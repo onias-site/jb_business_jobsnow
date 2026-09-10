@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import com.ccp.constants.CcpOtherConstants;
-import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpJsonFieldName;
+import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.dependency.injection.CcpDependencyInjection;
 import com.ccp.especifications.db.crud.CcpCrud;
 import com.ccp.especifications.db.crud.CcpSelectUnionAll;
@@ -21,14 +21,12 @@ import com.jb.entities.JbEntityBotCommandName;
 import com.jb.entities.JbEntityBotCommandStep;
 import com.jb.entities.JbEntityBotCommandStepEndMessage;
 import com.jb.entities.JbEntityBotCommandStepExplanation;
-import com.jb.entities.JbEntityBotCommandStepFlowMessage;
 import com.jb.entities.JbEntityBotCommandStepStartMessage;
 import com.jb.entities.JbEntityBotExplanation;
-import com.jn.utils.JnDeleteKeysFromCache;
-import com.jn.utils.JnLanguage;
-
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
+import com.jn.utils.JnDeleteKeysFromCache;
+import com.jn.utils.JnLanguage;
 
 /**
  * Motor central dos bots de suporte Telegram do jobsnow. Inicializado como singleton,
@@ -175,7 +173,6 @@ public class JbBotEngine {
 	
 		CcpSelectUnionAll resultFromSearchAllSteps = crud.unionAll(parametersToSearchAllSteps, JnDeleteKeysFromCache.INSTANCE, 
 				JbEntityBotCommandStepStartMessage.ENTITY, 
-				JbEntityBotCommandStepFlowMessage.ENTITY, 
 				JbEntityBotCommandStepEndMessage.ENTITY,
 				JbEntityBotCommandExplanation.ENTITY, 
 				JbEntityBotCommandStep.ENTITY 

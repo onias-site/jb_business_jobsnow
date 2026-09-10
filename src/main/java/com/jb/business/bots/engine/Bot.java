@@ -76,7 +76,7 @@ class Bot implements JbBotBusiness{
 		String language = json.getAsString(JnJsonCommonsFields.language);
 		String stepName = json.getAsString(JnJsonInstantMessengerFields.stepName);
 		Stream<CcpJsonRepresentation> stream3 = messages.stream();
-		var filter = stream3
+		Stream<CcpJsonRepresentation> filter = stream3
 				.filter(x -> x.getAsString(JnJsonInstantMessengerFields.stepName).equals(stepName));
 				var filter2 = filter
 				.filter(x -> x.getAsString(JnJsonCommonsFields.language).equals(language));
@@ -93,14 +93,19 @@ class Bot implements JbBotBusiness{
 		
 		CcpJsonRepresentation message = findFirst.get();
 
+		CcpJsonRepresentation sendMessage = this.sendMessage(json, message);
+		
+		return sendMessage;
+		
+	}
+
+	protected CcpJsonRepresentation sendMessage(CcpJsonRepresentation json, CcpJsonRepresentation message) {
 		String type = message.getOrDefault(JnJsonInstantMessengerFields.instantMessageType, () -> JnInstantMessageType.text.name());
 		
 		CcpJsonRepresentation putToken = this.putToken(json);
 		JnInstantMessageType valueOf = JnInstantMessageType.valueOf(type);
 		CcpJsonRepresentation sendMessage = valueOf.sendMessage(putToken, message);
-		
 		return sendMessage;
-		
 	}
 	
 	public CcpJsonRepresentation loadSession(CcpJsonRepresentation json) {

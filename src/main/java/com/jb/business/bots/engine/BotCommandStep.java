@@ -16,11 +16,11 @@ import com.ccp.especifications.db.crud.CcpSelectUnionAll;
 import com.ccp.flow.CcpErrorFlowDisturb;
 import com.ccp.json.validations.global.engine.CcpJsonValidationError;
 import com.jb.entities.JbEntityBotCommandStep;
-import com.jb.entities.JbEntityBotCommandStep.JbNextStepFields;
 import com.jb.entities.JbEntityBotCommandStepEndMessage;
 import com.jb.entities.JbEntityBotCommandStepExplanation;
 import com.jb.entities.JbEntityBotCommandStepSession;
 import com.jb.entities.JbEntityBotCommandStepStartMessage;
+import com.jb.entities.subfields.JbNextStepFields;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
@@ -89,8 +89,7 @@ class BotCommandStep implements JbBotBusiness{
 		List<CcpJsonRepresentation> allNextSteps = entityRow.getAsJsonList(JbEntityBotCommandStep.Fields.stepFlow);
 		for (CcpJsonRepresentation json : allNextSteps) {
 			Integer status = json.getAsIntegerNumber(JnJsonCommonsFields.status);
-			CcpJsonRepresentation nextStep = json.getInnerJson(JnJsonInstantMessengerFields.stepName);
-			stepFlow.put(status, nextStep);
+			stepFlow.put(status, json);
 		}
 		return stepFlow;
 	}
@@ -158,9 +157,13 @@ class BotCommandStep implements JbBotBusiness{
 				return execute;
 			}
 
-			List<CcpJsonRepresentation> message = flow.getAsJsonList(JbNextStepFields.message);
-			
-			json = bot.sendMessage(json, message);
+			List<CcpJsonRepresentation> messages = flow.getAsJsonList(JbNextStepFields.message);
+			CcpJsonRepresentation copy = json.copy();
+			json = messages.stream().filter(x -> x.getAsString(JnJsonCommonsFields.language).equals(copy.getAsString(JnJsonCommonsFields.language)))
+			.map(message -> bot.sendMessage(copy, message))
+			.findFirst()
+			.orElseGet(copy.getJsonSupplier())
+			;
 			
 			String nextStepName = flow.getAsString(JbNextStepFields.nextStep);
 			

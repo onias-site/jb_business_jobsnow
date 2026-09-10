@@ -19,13 +19,12 @@ import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFr
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorArray;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNestedJson;
-import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNumberInteger;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
-import com.ccp.json.validations.global.annotations.CcpJsonGlobalValidations;
-import com.ccp.json.validations.global.annotations.CcpJsonValidationFieldList;
 import com.ccp.process.CcpProcessStatusDefault;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.login.token.JbSupportLoginToken;
+import com.jb.entities.subfields.JbNextStepFields;
+import com.jb.entities.subfields.JbNextStepMessageFields;
 import com.jn.entities.decorators.JnVersionableEntity;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
@@ -61,35 +60,6 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 		;
 	}
 	
-	static enum AtLeastOne{
-		message, nextStep 
-	}
-	
-	
-	@CcpJsonGlobalValidations(requiresAtLeastOne = {@CcpJsonValidationFieldList(AtLeastOne.class)})
-	public static enum JbNextStepFields implements CcpJsonFieldName{
-		@CcpJsonFieldValidatorArray(minSize = 1)
-		@CcpJsonFieldTypeNestedJson(jsonValidation = NextStepMessageFields.class)
-		message,
-		
-		@CcpJsonFieldValidatorRequired
-		@CcpJsonFieldTypeNumberInteger
-		status,
-		
-		@CcpJsonFieldTypeString
-		nextStep,
-		
-		;
-	}
-	public static enum NextStepMessageFields implements CcpJsonFieldName{
-		@CcpJsonFieldValidatorRequired
-		@CcpJsonCopyFieldValidationsFrom(JnJsonCommonsFields.class)
-		language,
-		@CcpJsonFieldValidatorRequired
-		@CcpJsonCopyFieldValidationsFrom(JnJsonCommonsFields.class)
-		message
-		;
-	}
 	
 	/**
 	 * Monta um registro completo desta entidade, pronto para {@code ENTITY.save(...)}. O parâmetro
@@ -155,8 +125,8 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 
 		String languageName = language.name();
 
-		CcpJsonRepresentation putLanguage = CcpOtherConstants.EMPTY_JSON.put(NextStepMessageFields.language, languageName);
-		CcpJsonRepresentation stepFlowMessage = putLanguage.put(NextStepMessageFields.message, message);
+		CcpJsonRepresentation putLanguage = CcpOtherConstants.EMPTY_JSON.put(JbNextStepMessageFields.language, languageName);
+		CcpJsonRepresentation stepFlowMessage = putLanguage.put(JbNextStepMessageFields.message, message);
 
 		return stepFlowMessage;
 	}
@@ -177,6 +147,6 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 		
 		return createBulkItems;
 	}
-	
-	
 }
+
+
