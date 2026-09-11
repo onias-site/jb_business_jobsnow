@@ -1,5 +1,6 @@
 package com.jb.entities;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,6 +21,7 @@ import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorArray;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
 import com.jb.business.bots.engine.JbBotType;
 import com.jb.business.bots.engine.JbSupportBotCommands;
+import com.jb.business.bots.login.token.JbSupportLoginTokenTypes;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
@@ -63,12 +65,24 @@ public class JbEntityBot implements CcpEntityConfigurator {
 		.put(JnJsonInstantMessengerFields.commandName, commandName)
 		;
 		
+	
+		
+		
+		
 		
 		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(
 				ENTITY
 				,supportBot
 				);
-		return createBulkItems;
+		ArrayList<CcpBulkItem> arrayList = new ArrayList<>(createBulkItems);
+		JbSupportLoginTokenTypes[] values = JbSupportLoginTokenTypes.values();
+		
+		for (JbSupportLoginTokenTypes value : values) {
+			List<CcpBulkItem> instantMessageTemplate = value.getInstantMessageTemplate();
+			arrayList.addAll(instantMessageTemplate);
+		}
+		
+		return arrayList;
 	}
 	
 	
