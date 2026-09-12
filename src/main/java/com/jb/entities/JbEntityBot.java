@@ -65,11 +65,6 @@ public class JbEntityBot implements CcpEntityConfigurator {
 		.put(JnJsonInstantMessengerFields.commandName, commandName)
 		;
 		
-	
-		
-		
-		
-		
 		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(
 				ENTITY
 				,supportBot
