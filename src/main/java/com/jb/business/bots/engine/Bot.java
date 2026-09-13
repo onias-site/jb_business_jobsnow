@@ -18,8 +18,8 @@ import com.jb.entities.JbEntityBot;
 import com.jb.entities.JbEntityBotAllowedUser;
 import com.jb.entities.JbEntityBotCommandStepSession;
 import com.jb.entities.JbEntityBotExplanation;
-import com.jn.business.messages.JnBusinessSendInstantMessage;
 import com.jn.business.messages.JnInstantMessageType;
+import com.jn.business.messages.JnMessageType;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.jn.utils.JnLanguage;
@@ -195,7 +195,7 @@ class Bot implements JbBotBusiness{
 				//TODO PARAMETRIZAR ESSE TEXT
 				.put(JnJsonInstantMessengerFields.instantMessageType, JnInstantMessageType.text);
 				CcpJsonRepresentation json = put2
-				.renameField(JbBotEngine.Fields.message_id, JnBusinessSendInstantMessage.Fields.replyTo)
+				.renameField(JbBotEngine.Fields.message_id, JnMessageType.InstantMessengerApiFields.replyTo)
 				;
 
 		CcpJsonRepresentation renameField = json.renameField(JnJsonInstantMessengerFields.message, StepFields.typedValue);
