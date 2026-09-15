@@ -3,7 +3,8 @@ package com.jb.entities;
 import com.ccp.decorators.CcpJsonFieldName;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCache;
-import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityDisposable;
+import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCustomDecorator;
+import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCustomDecorators;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityFieldsTransformer;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityFieldsValidator;
 import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityFactory;
@@ -13,7 +14,9 @@ import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityField
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNestedJson;
-import com.jn.entities.decorators.JnDisposableEntity;
+import com.jn.entities.decorators.annotations.JnEntityDisposable;
+import com.jn.entities.decorators.builders.JnEntityDisposableBuilder;
+import com.jn.entities.decorators.engine.JnDisposableEntity;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
@@ -21,7 +24,8 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 @CcpEntityCache(3600)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandStepSession.Fields.class)
-@CcpEntityDisposable(expurgTime = CcpEntityExpurgableOptions.daily, expurgableEntityFactory = JnDisposableEntity.class)
+@CcpEntityCustomDecorators(value = {@CcpEntityCustomDecorator(value = JnEntityDisposableBuilder.class, priority = 1),})
+@JnEntityDisposable(value = JnDisposableEntity.class, timeOption = CcpEntityExpurgableOptions.daily)
 /**
  * Entidade que persiste a sessão corrente de um usuário em um passo de um comando de bot.
  * Descartável diariamente ({@code @CcpEntityDisposable}) e com cache de 1 hora.

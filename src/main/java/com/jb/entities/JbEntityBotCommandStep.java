@@ -1,5 +1,7 @@
 package com.jb.entities;
 
+import com.jn.entities.decorators.annotations.JnEntityVersionable;
+import com.jn.entities.decorators.engine.JnVersionableEntity;
 import java.util.Arrays;
 import java.util.List;
 
@@ -9,9 +11,10 @@ import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.especifications.db.bulk.CcpBulkItem;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCache;
+import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCustomDecorator;
+import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCustomDecorators;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityFieldsTransformer;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityFieldsValidator;
-import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityVersionable;
 import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityFactory;
 import com.ccp.especifications.db.utils.entity.decorators.interfaces.CcpEntityConfigurator;
 import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityFieldPrimaryKey;
@@ -25,14 +28,15 @@ import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.login.token.JbSupportLoginToken;
 import com.jb.entities.subfields.JbNextStepFields;
 import com.jb.entities.subfields.JbNextStepMessageFields;
-import com.jn.entities.decorators.JnVersionableEntity;
+import com.jn.entities.decorators.builders.JnEntityVersionableBuilder;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.jn.utils.JnLanguage;
 
 @CcpEntityCache(3600)
-@CcpEntityVersionable(JnVersionableEntity.class)
+@CcpEntityCustomDecorators(value = {@CcpEntityCustomDecorator(value = JnEntityVersionableBuilder.class, priority = 2),})
+@JnEntityVersionable(JnVersionableEntity.class)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandStep.Fields.class)
 /**
