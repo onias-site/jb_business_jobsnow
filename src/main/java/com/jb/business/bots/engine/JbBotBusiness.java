@@ -21,7 +21,7 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 interface JbBotBusiness extends CcpBusiness{
 	default boolean isVisible(CcpJsonRepresentation json) {
 		return true;
-	}
+	} 
 	
 	default boolean hasPriority(CcpJsonRepresentation json) {
 		return false;

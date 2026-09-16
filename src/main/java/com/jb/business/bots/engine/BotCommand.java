@@ -18,7 +18,7 @@ import com.jb.entities.JbEntityBotCommandName;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
-class BotCommand implements JbBotBusiness{
+class BotCommand implements JbBotBusiness{ 
 	
 	final String name;	
 	private final List<String> parameterNames;
