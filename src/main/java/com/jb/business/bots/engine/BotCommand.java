@@ -18,6 +18,7 @@ import com.jb.entities.JbEntityBotCommandName;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
+
 class BotCommand implements JbBotBusiness{ 
 	
 	final String name;	
@@ -44,7 +45,7 @@ class BotCommand implements JbBotBusiness{
 	}
 
 	public boolean commandNameDoesNotMatch(CcpJsonRepresentation json) {
-		String typedValue = json.getAsString(StepFields.typedValue);
+		String typedValue = json.getAsString(JnJsonCommonsFields.typedValue);
 		String[] split = typedValue.split(" ");
 		List<String> asList = Arrays.asList(split);
 		String first = asList.get(0);
@@ -85,7 +86,7 @@ class BotCommand implements JbBotBusiness{
 	}
 	
 	private CcpJsonRepresentation putParameters(CcpJsonRepresentation json) {
-		String typedValue = json.getAsString(StepFields.typedValue);
+		String typedValue = json.getAsString(JnJsonCommonsFields.typedValue);
 		String[] split = typedValue.split(" ");
 		List<String> asList = Arrays.asList(split);
 		int size = asList.size();
