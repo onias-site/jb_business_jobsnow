@@ -34,7 +34,7 @@ public enum JbSupportLoginTokenTypes implements CcpBusiness{
 		return json;
 	}
 	public List<CcpBulkItem> getInstantMessageTemplate(){
-		Class<?> class1 = this.sender.getClass();
+		Class<?> class1 = this.sender;
 		String templateId = class1.getName();
 		CcpJsonRepresentation json = CcpOtherConstants.EMPTY_JSON
 				.put(JnJsonCommonsFields.templateId, templateId)
