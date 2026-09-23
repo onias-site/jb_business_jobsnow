@@ -23,6 +23,7 @@ import com.jb.entities.JbEntityBotCommandStepEndMessage;
 import com.jb.entities.JbEntityBotCommandStepExplanation;
 import com.jb.entities.JbEntityBotCommandStepStartMessage;
 import com.jb.entities.JbEntityBotExplanation;
+import com.jb.entities.subfields.JbNextStepFields;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.jn.utils.JnDeleteKeysFromCache;
@@ -130,13 +131,22 @@ public class JbBotEngine {
 			}
 			var nextSteps = firstStep.getAsJsonList(JbEntityBotCommandStep.Fields.stepFlow);
 			for (CcpJsonRepresentation nextStep : nextSteps) {
+
+				String nextStepName = nextStep.getAsString(JbNextStepFields.nextStep);
+				String nextStepNameTrim = nextStepName.trim();
+				boolean hasNoNextStep = nextStepNameTrim.isEmpty();
+
+				if(hasNoNextStep) {
+					continue;
+				}
+
 				for (var language : languages) {
-					CcpJsonRepresentation duplicateValueFromField = nextStep
-							.duplicateValueFromField(JnJsonInstantMessengerFields.stepName, JnJsonInstantMessengerFields.commandName)
+					CcpJsonRepresentation putSameValueInManyFields = CcpOtherConstants.EMPTY_JSON
+							.putSameValueInManyFields(nextStepNameTrim, JnJsonInstantMessengerFields.stepName, JnJsonInstantMessengerFields.commandName)
 							;
-					CcpJsonRepresentation put = duplicateValueFromField
+					CcpJsonRepresentation put = putSameValueInManyFields
 							.put(JnJsonCommonsFields.language, language);
-					allSteps.put(stepName, put);
+					allSteps.put(nextStepNameTrim, put);
 				}
 			}
 			CcpJsonRepresentation duplicateValueFromField = firstStep.duplicateValueFromField(JnJsonInstantMessengerFields.stepName, JnJsonInstantMessengerFields.commandName);
