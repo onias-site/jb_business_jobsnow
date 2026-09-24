@@ -193,7 +193,7 @@ class Bot implements JbBotBusiness{
 		CcpJsonRepresentation put = message
 				.put(JnJsonInstantMessengerFields.botName, botTypeName2);
 				CcpJsonRepresentation put2 = put
-				//TODO PARAMETRIZAR ESSE TEXT
+				//LATER PARAMETRIZAR ESSE TEXT
 				.put(JnJsonInstantMessengerFields.instantMessageType, JnInstantMessageType.text);
 				CcpJsonRepresentation json = put2
 				.renameField(JbBotEngine.Fields.message_id, CcpJsonCommonsFields.replyTo)
