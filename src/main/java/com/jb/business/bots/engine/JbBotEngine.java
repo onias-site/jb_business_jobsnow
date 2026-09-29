@@ -3,9 +3,12 @@ package com.jb.business.bots.engine;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpJsonFieldName;
@@ -155,8 +158,10 @@ public class JbBotEngine {
 			this.allCommands.put(commandName, botCommand);
 		}
 
+		this.addStepsReachableFromTheKnownOnes(crud, allSteps, languages);
+
 		JbDefaultBotCommandStep[] defaultBotCommandSteps = JbDefaultBotCommandStep.values();
-	
+
 		for (JbDefaultBotCommandStep defaultBotCommandStep : defaultBotCommandSteps) {
 			String commandName = defaultBotCommandStep.name();
 			BotCommand botCommand = new BotCommand(commandName, resultFromSearchCommandsAndFirstSteps);
@@ -206,6 +211,63 @@ public class JbBotEngine {
 		this.allSteps = stepsMap;
 	}
 	
+	/**
+	 * Adds to {@code allSteps} every step reachable from the ones already there, through {@code nextStep}
+	 * or through the {@code stepFlow} items, at any depth. Up to 2026-09-28 only the first step of each
+	 * command and the {@code stepFlow} targets of that first step were loaded, so a command whose second
+	 * step came from {@code nextStep} (or whose third step came from the second one) lost its session: the
+	 * step was not in {@code allSteps} and the chain ended after the first step.
+	 */
+	private void addStepsReachableFromTheKnownOnes(CcpCrud crud, Map<String, CcpJsonRepresentation> allSteps, JnLanguage[] languages) {
+
+		Set<String> stepsToVisit = new HashSet<>(allSteps.keySet());
+
+		while(false == stepsToVisit.isEmpty()) {
+
+			Stream<String> stepsToVisitStream = stepsToVisit.stream();
+			Stream<CcpJsonRepresentation> parametersStream = stepsToVisitStream.map(stepName -> CcpOtherConstants.EMPTY_JSON.put(JnJsonInstantMessengerFields.stepName, stepName));
+			CcpJsonRepresentation[] parametersToSearchSteps = parametersStream.toArray(CcpJsonRepresentation[]::new);
+			CcpSelectUnionAll foundSteps = crud.unionAll(parametersToSearchSteps, JnDeleteKeysFromCache.INSTANCE, JbEntityBotCommandStep.ENTITY);
+			List<CcpJsonRepresentation> stepRows = foundSteps.getEntityRows(JbEntityBotCommandStep.ENTITY);
+
+			Set<String> reachedSteps = new HashSet<>();
+
+			for (CcpJsonRepresentation stepRow : stepRows) {
+				String nextStep = stepRow.getAsString(JbEntityBotCommandStep.Fields.nextStep);
+				reachedSteps.add(nextStep);
+
+				List<CcpJsonRepresentation> stepFlow = stepRow.getAsJsonList(JbEntityBotCommandStep.Fields.stepFlow);
+
+				for (CcpJsonRepresentation flow : stepFlow) {
+					String flowNextStep = flow.getAsString(JbNextStepFields.nextStep);
+					reachedSteps.add(flowNextStep);
+				}
+			}
+
+			Set<String> newSteps = new HashSet<>();
+
+			for (String reachedStep : reachedSteps) {
+				String reachedStepTrim = reachedStep.trim();
+				boolean isBlank = reachedStepTrim.isEmpty();
+				boolean alreadyKnown = allSteps.containsKey(reachedStepTrim);
+
+				if(isBlank || alreadyKnown) {
+					continue;
+				}
+
+				for (var language : languages) {
+					CcpJsonRepresentation stepWithNames = CcpOtherConstants.EMPTY_JSON
+							.putSameValueInManyFields(reachedStepTrim, JnJsonInstantMessengerFields.stepName, JnJsonInstantMessengerFields.commandName);
+					CcpJsonRepresentation stepWithLanguage = stepWithNames.put(JnJsonCommonsFields.language, language);
+					allSteps.put(reachedStepTrim, stepWithLanguage);
+				}
+				newSteps.add(reachedStepTrim);
+			}
+
+			stepsToVisit = newSteps;
+		}
+	}
+
 	static enum Fields implements CcpJsonFieldName{
 		bots, replyTo, commandParameters, message_id
 	}

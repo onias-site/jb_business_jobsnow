@@ -24,6 +24,11 @@
 			<artifactId>jn_business_jobsnow</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
+		<dependency>
+			<groupId>com.ccp.jn.vis</groupId>
+			<artifactId>vis_business_jobsnow</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 
 	</dependencies>
 

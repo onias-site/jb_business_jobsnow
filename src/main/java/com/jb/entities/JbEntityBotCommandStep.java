@@ -26,16 +26,24 @@ import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
 import com.ccp.process.CcpProcessStatusDefault;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.login.token.JbSupportLoginToken;
+import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchyChooseMode;
+import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchyDecideItem;
+import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchyFields;
+import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchyShowRequest;
+import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchyStatus;
+import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchySteps;
 import com.jb.entities.subfields.JbNextStepFields;
 import com.jb.entities.subfields.JbNextStepMessageFields;
 import com.jn.entities.decorators.builders.JnEntityVersionableBuilder;
+import com.jn.entities.decorators.builders.JnEntityVersionablePurgeBuilder;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.jn.utils.JnLanguage;
+import com.vis.entities.VisEntitySkillFixHierarchyPending;
 
 @CcpEntityCache(3600)
-@CcpEntityCustomDecorators(value = {@CcpEntityCustomDecorator(value = JnEntityVersionableBuilder.class, priority = 2),})
+@CcpEntityCustomDecorators(value = {@CcpEntityCustomDecorator(value = JnEntityVersionableBuilder.class, priority = 2),@CcpEntityCustomDecorator(value = JnEntityVersionablePurgeBuilder.class, priority = 5),})
 @JnEntityVersionable(JnVersionableEntity.class)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandStep.Fields.class)
@@ -147,9 +155,79 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 		CcpJsonRepresentation solveLoginTokenTicketCommand = getBotCommandStep(solveLoginTokenTicket, JbSupportLoginToken.class, "", stepFlow);
 
 
-		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(ENTITY, solveLoginTokenTicketCommand);
-		
+		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(ENTITY, solveLoginTokenTicketCommand
+				, this.getShowSkillFixHierarchyRequestStep()
+				, this.getChooseSkillFixHierarchyReviewModeStep()
+				, this.getDecideSkillFixHierarchyItemStep());
+
 		return createBulkItems;
+	}
+
+	/**
+	 * The flow messages of the {@code fixSkillHierarchy} steps are the text the engine of the step left in
+	 * {@code botReply}, whatever the language: the engine already writes it in the language of the session.
+	 */
+	private CcpJsonRepresentation[] getBotReplyInEveryLanguage() {
+		String botReply = "{" + JbSupportSkillFixHierarchyFields.botReply + "}";
+		CcpJsonRepresentation portuguese = getStepFlowMessage(JnLanguage.portuguese, botReply);
+		CcpJsonRepresentation english = getStepFlowMessage(JnLanguage.english, botReply);
+		CcpJsonRepresentation spanish = getStepFlowMessage(JnLanguage.spanish, botReply);
+		CcpJsonRepresentation[] botReplyInEveryLanguage = {portuguese, english, spanish};
+		return botReplyInEveryLanguage;
+	}
+
+	/**
+	 * {@code /fixSkillHierarchy <parent> <email>}: shows the request and goes on to the choice of how to decide
+	 * it. Without pending items the session ends with a notice to the operator.
+	 */
+	private CcpJsonRepresentation getShowSkillFixHierarchyRequestStep() {
+		String commandName = JbSupportBotCommands.fixSkillHierarchy.name();
+		String chooseMode = JbSupportSkillFixHierarchySteps.fixSkillHierarchyChooseMode.name();
+		String email = "{" + VisEntitySkillFixHierarchyPending.Fields.email + "}";
+		String parent = "{" + VisEntitySkillFixHierarchyPending.Fields.parent + "}";
+
+		CcpJsonRepresentation portuguese = getStepFlowMessage(JnLanguage.portuguese, "Não há itens pendentes de ajuste na hierarquia de conhecimentos para o e-mail '" + email + "' e o termo '" + parent + "'");
+		CcpJsonRepresentation english = getStepFlowMessage(JnLanguage.english, "There are no pending skill hierarchy fix items for the e-mail '" + email + "' and the term '" + parent + "'");
+		CcpJsonRepresentation spanish = getStepFlowMessage(JnLanguage.spanish, "No hay ítems pendientes de ajuste en la jerarquía de conocimientos para el correo '" + email + "' y el término '" + parent + "'");
+		int requestNotFound = JbSupportSkillFixHierarchyStatus.requestNotFound.asNumber();
+		CcpJsonRepresentation requestNotFoundFlow = getStepFlow(requestNotFound, "", portuguese, english, spanish);
+
+		CcpJsonRepresentation step = getBotCommandStep(commandName, JbSupportSkillFixHierarchyShowRequest.class, chooseMode, requestNotFoundFlow);
+		return step;
+	}
+
+	/**
+	 * Approve all, reject all (finishing the review) or one by one (going on to the item decision). An answer
+	 * not understood repeats this step.
+	 */
+	private CcpJsonRepresentation getChooseSkillFixHierarchyReviewModeStep() {
+		String chooseMode = JbSupportSkillFixHierarchySteps.fixSkillHierarchyChooseMode.name();
+		String decideItem = JbSupportSkillFixHierarchySteps.fixSkillHierarchyDecideItem.name();
+		CcpJsonRepresentation[] botReply = this.getBotReplyInEveryLanguage();
+
+		int invalidAnswer = JbSupportSkillFixHierarchyStatus.invalidAnswer.asNumber();
+		int reviewFinished = JbSupportSkillFixHierarchyStatus.reviewFinished.asNumber();
+		CcpJsonRepresentation invalidAnswerFlow = getStepFlow(invalidAnswer, chooseMode, botReply);
+		CcpJsonRepresentation reviewFinishedFlow = getStepFlow(reviewFinished, "", botReply);
+
+		CcpJsonRepresentation step = getBotCommandStep(chooseMode, JbSupportSkillFixHierarchyChooseMode.class, decideItem, invalidAnswerFlow, reviewFinishedFlow);
+		return step;
+	}
+
+	/**
+	 * Decision on one item; the step repeats itself until the last item, which finishes the review.
+	 */
+	private CcpJsonRepresentation getDecideSkillFixHierarchyItemStep() {
+		String decideItem = JbSupportSkillFixHierarchySteps.fixSkillHierarchyDecideItem.name();
+		CcpJsonRepresentation[] botReply = this.getBotReplyInEveryLanguage();
+
+		int invalidAnswer = JbSupportSkillFixHierarchyStatus.invalidAnswer.asNumber();
+		int reviewFinished = JbSupportSkillFixHierarchyStatus.reviewFinished.asNumber();
+		CcpJsonRepresentation invalidAnswerFlow = getStepFlow(invalidAnswer, decideItem, botReply);
+		CcpJsonRepresentation reviewFinishedFlow = getStepFlow(reviewFinished, "", botReply);
+
+		CcpJsonRepresentation step = getBotCommandStep(decideItem, JbSupportSkillFixHierarchyDecideItem.class, decideItem, invalidAnswerFlow, reviewFinishedFlow);
+		return step;
 	}
 }
 

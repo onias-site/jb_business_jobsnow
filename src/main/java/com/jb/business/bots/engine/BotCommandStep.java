@@ -76,7 +76,7 @@ class BotCommandStep implements JbBotBusiness{
 		CcpJsonRepresentation newJson = json.put(JnJsonInstantMessengerFields.stepName, nextStep);
 		
 		CcpJsonRepresentation savedSession = newJson.getTransformedJson(JsonProducers.sessionValuesProducer);
-		
+
 		JbEntityBotCommandStepSession.ENTITY.save(savedSession);
 		BotCommand loadedCommand = this.getLoadedCommand(json);
 		loadedCommand.putSession(savedSession);
@@ -120,8 +120,7 @@ class BotCommandStep implements JbBotBusiness{
 			}
 			
 			CcpJsonRepresentation engineResult = this.engine.execute(json);
-			Predicate<CcpJsonRepresentation> conditionIfHasMoreSession = jsn -> false == this.nextStep.trim().isEmpty() && JbBotEngine.INSTANCE.allSteps.containsKey(this.nextStep);
-			
+			Predicate<CcpJsonRepresentation> conditionIfHasMoreSession = jsn -> false == this.nextStep.trim().isEmpty() && JbBotEngine.INSTANCE.allSteps.containsKey(this.nextStep);			
 			CcpBusiness updateSession = jsn -> {
 				CcpJsonRepresentation jsonPreservingUmmatableFields = jsn.mergeWithAnotherJson(ummutableFields);
 				CcpJsonRepresentation savedSession = this.saveSession(jsonPreservingUmmatableFields, this.nextStep);
@@ -158,7 +157,10 @@ class BotCommandStep implements JbBotBusiness{
 			}
 
 			List<CcpJsonRepresentation> messages = flow.getAsJsonList(JbNextStepFields.message);
-			CcpJsonRepresentation copy = json.copy();
+			// the flow message is resolved with what the engine had produced when it diverted the flow, so a
+			// message can carry values calculated by the engine, and not only the ones that arrived at the step
+			CcpJsonRepresentation jsonWithWhatTheEngineProduced = json.mergeWithAnotherJson(e.json);
+			CcpJsonRepresentation copy = jsonWithWhatTheEngineProduced.copy();
 			json = messages.stream().filter(x -> x.getAsString(JnJsonCommonsFields.language).equals(copy.getAsString(JnJsonCommonsFields.language)))
 			.map(message -> bot.sendMessage(copy, message))
 			.findFirst()

@@ -86,6 +86,15 @@ class BotCommand implements JbBotBusiness{
 	}
 	
 	private CcpJsonRepresentation putParameters(CcpJsonRepresentation json) {
+
+		// the parameters come only with the command itself; in the later steps of the session the typed text is
+		// the answer to the step, and reading its words as parameters would overwrite the ones given with the command
+		boolean isAnswerToAStep = this.commandNameDoesNotMatch(json);
+
+		if(isAnswerToAStep) {
+			return json;
+		}
+
 		String typedValue = json.getAsString(JnJsonCommonsFields.typedValue);
 		String[] split = typedValue.split(" ");
 		List<String> asList = Arrays.asList(split);

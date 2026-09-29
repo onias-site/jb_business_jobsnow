@@ -134,20 +134,12 @@ class Bot implements JbBotBusiness{
 				CcpJsonRepresentation priorityCommand = command.getCommandJson(json);
 				return priorityCommand;
 			}
-			boolean session2 = command.hasSession(json);
-
-			boolean hasNoSession = false == session2;
-			
-			if(hasNoSession) {
-				json = command.getCommandJson(json);
-				break;
-			}
-			
-			CcpJsonRepresentation session = command.getSession(json);
-			CcpJsonRepresentation innerJson = session.getInnerJson(JnJsonCommonsFields.json);
-			CcpJsonRepresentation removeFields = session.removeFields(JnJsonCommonsFields.json);
-			CcpJsonRepresentation mergeWithAnotherJson = innerJson.mergeWithAnotherJson(removeFields);
-			return mergeWithAnotherJson;
+			// typing the command itself starts it over: a session left in the middle of a multi-step command (in
+			// memory or in the database) is discarded, otherwise the user would be sent back to the old step and
+			// the command just typed, with its parameters, would be lost
+			json = command.getCommandJson(json);
+			JbDefaultBotCommandStep.removeSession.execute(json);
+			break;
 		}
 		
 		
@@ -161,7 +153,14 @@ class Bot implements JbBotBusiness{
 		CcpJsonRepresentation removeFields = savedSession.removeFields(JnJsonCommonsFields.json);
 		CcpJsonRepresentation handledSession = innerJson.mergeWithAnotherJson(removeFields);
 
-		return handledSession;
+		// what the user has just typed prevails over the session: the saved session still carries the text typed
+		// in the previous step, and without this the next step of a multi-step command would read that old text.
+		// The chatId of the message prevails too: the one read back from the database is a double (7.51717896E8),
+		// and the session id, calculated over it, would not be the one the next message looks for
+		CcpJsonRepresentation justTyped = json.getJsonPiece(JnJsonCommonsFields.typedValue, CcpJsonCommonsFields.replyTo, JnJsonInstantMessengerFields.chatId);
+		CcpJsonRepresentation sessionWithWhatWasJustTyped = handledSession.mergeWithAnotherJson(justTyped);
+
+		return sessionWithWhatWasJustTyped;
 	}
 
 	public boolean isVisible(CcpJsonRepresentation json) {

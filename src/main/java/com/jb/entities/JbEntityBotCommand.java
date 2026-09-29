@@ -24,12 +24,14 @@ import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.login.token.JbSupportLoginToken;
 import com.jn.entities.decorators.builders.JnEntityVersionableBuilder;
+import com.jn.entities.decorators.builders.JnEntityVersionablePurgeBuilder;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
+import com.vis.entities.VisEntitySkillFixHierarchyPending;
 
 @CcpEntityCache(3600)
-@CcpEntityCustomDecorators(value = {@CcpEntityCustomDecorator(value = JnEntityVersionableBuilder.class, priority = 2),})
+@CcpEntityCustomDecorators(value = {@CcpEntityCustomDecorator(value = JnEntityVersionableBuilder.class, priority = 2),@CcpEntityCustomDecorator(value = JnEntityVersionablePurgeBuilder.class, priority = 5),})
 @JnEntityVersionable(JnVersionableEntity.class)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommand.Fields.class)
@@ -61,9 +63,15 @@ public class JbEntityBotCommand implements CcpEntityConfigurator {
 		CcpJsonRepresentation data = put2.put(JbEntityBotCommand.Fields.parameterName, parameters);
 		
 		
+		String fixSkillHierarchyName = JbSupportBotCommands.fixSkillHierarchy.name();
+		CcpJsonRepresentation fixSkillHierarchyWithName = CcpOtherConstants.EMPTY_JSON.put(JnJsonInstantMessengerFields.commandName, fixSkillHierarchyName);
+		List<?> fixSkillHierarchyParameters = Arrays.asList(VisEntitySkillFixHierarchyPending.Fields.parent.name(), VisEntitySkillFixHierarchyPending.Fields.email.name());
+		CcpJsonRepresentation fixSkillHierarchy = fixSkillHierarchyWithName.put(JbEntityBotCommand.Fields.parameterName, fixSkillHierarchyParameters);
+
 		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(
 				ENTITY
 				,data
+				,fixSkillHierarchy
 				);
 		return createBulkItems;
 	}

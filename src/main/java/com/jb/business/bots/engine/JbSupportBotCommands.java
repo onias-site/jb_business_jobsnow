@@ -1,12 +1,12 @@
 package com.jb.business.bots.engine;
 
 /**
- * Cataloga os comandos disponíveis no bot de suporte. Atualmente contém apenas
- * {@code solveLoginTokenTicket}.
+ * Catalogs the commands available in the support bot: {@code solveLoginTokenTicket} (login token tickets) and
+ * {@code fixSkillHierarchy} (review of the skill hierarchy fix requests).
  */
 public enum JbSupportBotCommands {
 
-	solveLoginTokenTicket
+	solveLoginTokenTicket,
+	fixSkillHierarchy
 	;
 }
- 
