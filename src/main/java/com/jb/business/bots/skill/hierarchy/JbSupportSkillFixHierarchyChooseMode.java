@@ -7,14 +7,17 @@ import com.ccp.business.CcpBusiness;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.jn.utils.JnLanguage;
 import com.vis.business.skill.VisBusinessSkillFixHierarchyReview;
+import com.vis.business.skill.VisSkillFixHierarchyReviewFields;
 import com.vis.entities.VisEntitySkillFixHierarchyItemPending;
 
 /**
- * Second step of the {@code fixSkillHierarchy} command: the operator approves all the items, rejects all the
- * items (both with one justification, that goes to every item) or chooses to decide them one by one.
+ * Second step of the {@code fixSkillHierarchy} command: the operator approves all the pending items, rejects all the
+ * pending items (both with one justification, that goes to every item) or chooses to decide them one by one.
+ * The items decided in earlier reviews are already in {@code reviewDecisions} and keep their decisions.
  *
  * <p>Deciding all the items finishes the review ({@code reviewFinished}). Choosing one by one asks for the
- * first item and goes on to the next step. Any other answer, including a decision without justification, is
+ * first item and goes on to the next step. Choosing to ignore the user asks for the confirmation
+ * ({@code ignoreConfirmationAsked}). Any other answer, including a decision without justification, is
  * asked again ({@code invalidAnswer}).
  */
 public class JbSupportSkillFixHierarchyChooseMode implements CcpBusiness {
@@ -29,11 +32,20 @@ public class JbSupportSkillFixHierarchyChooseMode implements CcpBusiness {
 			return jsonWithPrompt;
 		}
 
+		if(answer.isIgnore()) {
+			String ignoreConfirmation = JbSupportSkillFixHierarchyConversation.getIgnoreConfirmation(json);
+			CcpJsonRepresentation jsonWithConfirmation = json.put(JbSupportSkillFixHierarchyFields.botReply, ignoreConfirmation);
+			CcpJsonRepresentation confirmationAsked = JbSupportSkillFixHierarchyStatus.ignoreConfirmationAsked.throwException(jsonWithConfirmation);
+			return confirmationAsked;
+		}
+
 		boolean decisionWithJustification = answer.isDecisionWithJustification();
 
 		if(decisionWithJustification) {
 			List<CcpJsonRepresentation> reviewItems = json.getAsJsonList(JbSupportSkillFixHierarchyFields.reviewItems);
-			List<CcpJsonRepresentation> decisions = new ArrayList<>();
+			// starts from the items decided in earlier reviews, which the first step already put in the session
+			List<CcpJsonRepresentation> previousDecisions = json.getAsJsonList(VisSkillFixHierarchyReviewFields.reviewDecisions);
+			List<CcpJsonRepresentation> decisions = new ArrayList<>(previousDecisions);
 
 			for (CcpJsonRepresentation reviewItem : reviewItems) {
 				String type = reviewItem.getAsString(VisEntitySkillFixHierarchyItemPending.Fields.type);

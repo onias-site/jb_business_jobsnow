@@ -42,15 +42,55 @@ final class JbSupportSkillFixHierarchyConversation {
 
 		if(portuguese) {
 			return "Responda com uma das opções:\n"
-					+ "• aprovar <justificativa> — aprova todos os itens\n"
-					+ "• rejeitar <justificativa> — rejeita todos os itens\n"
-					+ "• um a um — decide item por item";
+					+ "• aprovar <justificativa> — aprova todos os itens pendentes\n"
+					+ "• rejeitar <justificativa> — rejeita todos os itens pendentes\n"
+					+ "• um a um — decide item por item\n"
+					+ "• ignorar — descarta a solicitação e ignora as próximas deste usuário neste comando";
 		}
 
 		return "Answer with one of the options:\n"
-				+ "• approve <justification> — approves all the items\n"
-				+ "• reject <justification> — rejects all the items\n"
-				+ "• one by one — decides item by item";
+				+ "• approve <justification> — approves all the pending items\n"
+				+ "• reject <justification> — rejects all the pending items\n"
+				+ "• one by one — decides item by item\n"
+				+ "• ignore — discards the request and ignores the next ones of this user in this command";
+	}
+
+	/**
+	 * Asks the operator to confirm that the user will be ignored for the command.
+	 */
+	static String getIgnoreConfirmation(CcpJsonRepresentation json) {
+
+		JnLanguage language = getLanguage(json);
+		String email = json.getAsString(VisEntitySkillFixHierarchyPending.Fields.email);
+		boolean portuguese = isPortuguese(language);
+
+		if(portuguese) {
+			return "Confirma que o usuário " + email + " será ignorado no comando fixSkillHierarchy? "
+					+ "Esta solicitação será descartada sem aviso ao usuário e as próximas não chegarão mais a você.\n"
+					+ "Responda: sim ou não";
+		}
+
+		return "Do you confirm that the user " + email + " will be ignored in the fixSkillHierarchy command? "
+				+ "This request will be discarded without notifying the user and the next ones will no longer reach you.\n"
+				+ "Answer: yes or no";
+	}
+
+	/**
+	 * Justification that goes to the user for an item decided in an earlier review, which the operator is not
+	 * asked about again.
+	 */
+	static String getPreviousDecisionJustification(JnLanguage language, VisSkillFixHierarchyDecisions decision) {
+
+		boolean portuguese = isPortuguese(language);
+		boolean approved = VisSkillFixHierarchyDecisions.approved == decision;
+
+		if(portuguese) {
+			String previousDecisionJustification = approved ? "item já aprovado em revisão anterior" : "item já reprovado em revisão anterior";
+			return previousDecisionJustification;
+		}
+
+		String previousDecisionJustification = approved ? "item already approved in an earlier review" : "item already rejected in an earlier review";
+		return previousDecisionJustification;
 	}
 
 	static String getNotUnderstood(JnLanguage language) {

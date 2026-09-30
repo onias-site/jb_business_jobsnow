@@ -3,18 +3,27 @@ package com.jb.business.bots.skill.hierarchy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.ccp.business.CcpBusiness;
+import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.dependency.injection.CcpDependencyInjection;
 import com.ccp.especifications.db.crud.CcpCrud;
 import com.ccp.especifications.db.crud.CcpSelectUnionAll;
+import com.ccp.especifications.db.utils.entity.CcpEntity;
 import com.jn.utils.JnDeleteKeysFromCache;
 import com.jn.utils.JnLanguage;
+import com.vis.business.skill.VisBusinessSkillFixHierarchyReview;
+import com.vis.business.skill.VisSkillFixHierarchyDecisions;
 import com.vis.business.skill.VisSkillFixHierarchyReviewFields;
+import com.vis.entities.VisEntityCommandNotAllowedToUser;
+import com.vis.entities.VisEntitySkillFixHierarchyItemApproved;
 import com.vis.entities.VisEntitySkillFixHierarchyItemPending;
 import com.vis.entities.VisEntitySkillFixHierarchyPending;
 import com.vis.json.fields.validation.VisSkillFixHierarchyTypes;
+import com.vis.json.fields.validation.VisUserRequestCommands;
 
 /**
  * First step of the {@code fixSkillHierarchy} command ({@code /fixSkillHierarchy <parent> <email>}): shows the
@@ -22,13 +31,30 @@ import com.vis.json.fields.validation.VisSkillFixHierarchyTypes;
  * and the items still pending, and asks how to decide them. Both types of request ({@code add} and
  * {@code remove}) for the same parent are shown together.
  *
- * <p>Only the items still in {@link VisEntitySkillFixHierarchyItemPending} are shown: the {@code skill} of the
- * request may list skills already approved or rejected before. Without any pending item the flow is diverted
- * with {@code requestNotFound}.
+ * <p>The {@code skill} of the request may list skills decided in earlier reviews. Those found in the rejected
+ * items (the twin of {@link VisEntitySkillFixHierarchyItemPending}) or in
+ * {@link VisEntitySkillFixHierarchyItemApproved} are not asked to the operator: they enter the
+ * {@code reviewDecisions} already decided, as rejected or approved, and so reach the user's feedback. Only the
+ * items still in {@link VisEntitySkillFixHierarchyItemPending} are asked. When every item was decided before,
+ * the review finishes right here ({@code reviewFinished}); without any item at all the flow is diverted with
+ * {@code requestNotFound}.
+ *
+ * <p>A user ignored for the command ({@link VisEntityCommandNotAllowedToUser}) is not reviewed, even if the
+ * operator runs the command for them by mistake or on purpose: the flow is diverted with {@code userNotAllowed}
+ * before anything is read, and the operator is told how to stop ignoring the user.
  */
 public class JbSupportSkillFixHierarchyShowRequest implements CcpBusiness {
 
 	public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+
+		String email = json.getAsString(VisEntitySkillFixHierarchyPending.Fields.email);
+		CcpJsonRepresentation ignoredUserWithEmail = CcpOtherConstants.EMPTY_JSON.put(VisEntityCommandNotAllowedToUser.Fields.email, email);
+		CcpJsonRepresentation ignoredUser = ignoredUserWithEmail.put(VisEntityCommandNotAllowedToUser.Fields.commandName, VisUserRequestCommands.fixSkillHierarchy);
+		boolean userIsIgnored = VisEntityCommandNotAllowedToUser.ENTITY.exists(ignoredUser);
+
+		if(userIsIgnored) {
+			JbSupportSkillFixHierarchyStatus.userNotAllowed.throwException(json);
+		}
 
 		CcpJsonRepresentation requestKey = json.getJsonPiece(VisEntitySkillFixHierarchyPending.Fields.email, VisEntitySkillFixHierarchyPending.Fields.parent);
 		VisSkillFixHierarchyTypes[] types = VisSkillFixHierarchyTypes.values();
@@ -71,11 +97,35 @@ public class JbSupportSkillFixHierarchyShowRequest implements CcpBusiness {
 			JbSupportSkillFixHierarchyStatus.requestNotFound.throwException(json);
 		}
 
+		CcpEntity rejectedItemEntity = VisEntitySkillFixHierarchyItemPending.ENTITY.getTwinEntity();
 		CcpJsonRepresentation[] candidateItemsArray = candidateItems.toArray(new CcpJsonRepresentation[candidateItems.size()]);
-		CcpSelectUnionAll items = crud.unionAll(candidateItemsArray, JnDeleteKeysFromCache.INSTANCE, VisEntitySkillFixHierarchyItemPending.ENTITY);
+		CcpSelectUnionAll items = crud.unionAll(candidateItemsArray, JnDeleteKeysFromCache.INSTANCE, VisEntitySkillFixHierarchyItemPending.ENTITY, rejectedItemEntity, VisEntitySkillFixHierarchyItemApproved.ENTITY);
 		List<CcpJsonRepresentation> reviewItems = new ArrayList<>();
+		List<CcpJsonRepresentation> previousDecisions = new ArrayList<>();
+		JnLanguage language = JbSupportSkillFixHierarchyConversation.getLanguage(json);
 
 		for (CcpJsonRepresentation candidateItem : candidateItems) {
+			String type = candidateItem.getAsString(VisEntitySkillFixHierarchyItemPending.Fields.type);
+			String skill = candidateItem.getAsString(VisEntitySkillFixHierarchyItemPending.Fields.skill);
+
+			boolean wasRejectedBefore = rejectedItemEntity.isPresentInThisUnionAll(items, candidateItem);
+
+			if(wasRejectedBefore) {
+				String justification = JbSupportSkillFixHierarchyConversation.getPreviousDecisionJustification(language, VisSkillFixHierarchyDecisions.rejected);
+				CcpJsonRepresentation previousDecision = VisBusinessSkillFixHierarchyReview.getDecision(type, skill, VisSkillFixHierarchyDecisions.rejected, justification);
+				previousDecisions.add(previousDecision);
+				continue;
+			}
+
+			boolean wasApprovedBefore = VisEntitySkillFixHierarchyItemApproved.ENTITY.isPresentInThisUnionAll(items, candidateItem);
+
+			if(wasApprovedBefore) {
+				String justification = JbSupportSkillFixHierarchyConversation.getPreviousDecisionJustification(language, VisSkillFixHierarchyDecisions.approved);
+				CcpJsonRepresentation previousDecision = VisBusinessSkillFixHierarchyReview.getDecision(type, skill, VisSkillFixHierarchyDecisions.approved, justification);
+				previousDecisions.add(previousDecision);
+				continue;
+			}
+
 			boolean isPending = VisEntitySkillFixHierarchyItemPending.ENTITY.isPresentInThisUnionAll(items, candidateItem);
 
 			if(false == isPending) {
@@ -87,21 +137,29 @@ public class JbSupportSkillFixHierarchyShowRequest implements CcpBusiness {
 		}
 
 		boolean noPendingItem = reviewItems.isEmpty();
+		boolean noPreviousDecision = previousDecisions.isEmpty();
 
-		if(noPendingItem) {
+		if(noPendingItem && noPreviousDecision) {
 			JbSupportSkillFixHierarchyStatus.requestNotFound.throwException(json);
 		}
 
-		String requestText = this.getRequestText(json, foundRequests, reviewItems);
-
 		CcpJsonRepresentation jsonWithItems = json.put(JbSupportSkillFixHierarchyFields.reviewItems, reviewItems);
 		CcpJsonRepresentation jsonWithIndex = jsonWithItems.put(JbSupportSkillFixHierarchyFields.itemIndex, 0);
-		CcpJsonRepresentation jsonWithoutDecisions = jsonWithIndex.put(VisSkillFixHierarchyReviewFields.reviewDecisions, new ArrayList<>());
-		CcpJsonRepresentation jsonWithReply = jsonWithoutDecisions.put(JbSupportSkillFixHierarchyFields.botReply, requestText);
+
+		// every item was already decided in earlier reviews: there is nothing to ask the operator
+		if(noPendingItem) {
+			CcpJsonRepresentation finished = JbSupportSkillFixHierarchyConversation.finish(jsonWithIndex, previousDecisions);
+			return finished;
+		}
+
+		String requestText = this.getRequestText(json, foundRequests, reviewItems, previousDecisions);
+
+		CcpJsonRepresentation jsonWithPreviousDecisions = jsonWithIndex.put(VisSkillFixHierarchyReviewFields.reviewDecisions, previousDecisions);
+		CcpJsonRepresentation jsonWithReply = jsonWithPreviousDecisions.put(JbSupportSkillFixHierarchyFields.botReply, requestText);
 		return jsonWithReply;
 	}
 
-	private String getRequestText(CcpJsonRepresentation json, List<CcpJsonRepresentation> foundRequests, List<CcpJsonRepresentation> reviewItems) {
+	private String getRequestText(CcpJsonRepresentation json, List<CcpJsonRepresentation> foundRequests, List<CcpJsonRepresentation> reviewItems, List<CcpJsonRepresentation> previousDecisions) {
 
 		JnLanguage language = JbSupportSkillFixHierarchyConversation.getLanguage(json);
 		boolean portuguese = JbSupportSkillFixHierarchyConversation.isPortuguese(language);
@@ -120,36 +178,71 @@ public class JbSupportSkillFixHierarchyShowRequest implements CcpBusiness {
 			String typeDescription = type.getDescription(language);
 			String description = request.getAsString(VisEntitySkillFixHierarchyPending.Fields.description);
 
-			List<String> pendingSkills = new ArrayList<>();
+			List<String> pendingSkills = this.getSkillsOfTheType(reviewItems, typeName);
+			List<String> approvedBeforeSkills = this.getSkillsOfTheTypeWithTheDecision(previousDecisions, typeName, VisSkillFixHierarchyDecisions.approved);
+			List<String> rejectedBeforeSkills = this.getSkillsOfTheTypeWithTheDecision(previousDecisions, typeName, VisSkillFixHierarchyDecisions.rejected);
 
-			for (CcpJsonRepresentation reviewItem : reviewItems) {
-				String itemType = reviewItem.getAsString(VisEntitySkillFixHierarchyItemPending.Fields.type);
-				boolean isAnotherType = false == typeName.equals(itemType);
+			boolean hasPendingSkill = false == pendingSkills.isEmpty();
+			boolean hasApprovedBefore = false == approvedBeforeSkills.isEmpty();
+			boolean hasRejectedBefore = false == rejectedBeforeSkills.isEmpty();
+			boolean nothingOfThisType = false == hasPendingSkill && false == hasApprovedBefore && false == hasRejectedBefore;
 
-				if(isAnotherType) {
-					continue;
-				}
-
-				String skill = reviewItem.getAsString(VisEntitySkillFixHierarchyItemPending.Fields.skill);
-				pendingSkills.add(skill);
-			}
-
-			boolean noPendingSkillOfThisType = pendingSkills.isEmpty();
-
-			if(noPendingSkillOfThisType) {
+			if(nothingOfThisType) {
 				continue;
 			}
 
-			String joinedSkills = String.join(", ", pendingSkills);
 			String typeText = portuguese
-					? "[" + typeDescription + "]\nJustificativa do usuário: " + description + "\nItens pendentes: " + joinedSkills + "\n\n"
-					: "[" + typeDescription + "]\nUser's justification: " + description + "\nPending items: " + joinedSkills + "\n\n";
+					? "[" + typeDescription + "]\nJustificativa do usuário: " + description + "\n"
+					: "[" + typeDescription + "]\nUser's justification: " + description + "\n";
 			requestText.append(typeText);
+
+			if(hasPendingSkill) {
+				String joinedSkills = String.join(", ", pendingSkills);
+				String pendingText = portuguese
+						? "Itens pendentes: " + joinedSkills + "\n"
+						: "Pending items: " + joinedSkills + "\n";
+				requestText.append(pendingText);
+			}
+
+			if(hasApprovedBefore) {
+				String joinedApprovedBefore = String.join(", ", approvedBeforeSkills);
+				String approvedBeforeText = portuguese
+						? "Já aprovados anteriormente (não serão perguntados): " + joinedApprovedBefore + "\n"
+						: "Already approved before (will not be asked): " + joinedApprovedBefore + "\n";
+				requestText.append(approvedBeforeText);
+			}
+
+			if(hasRejectedBefore) {
+				String joinedRejectedBefore = String.join(", ", rejectedBeforeSkills);
+				String rejectedBeforeText = portuguese
+						? "Já reprovados anteriormente (não serão perguntados): " + joinedRejectedBefore + "\n"
+						: "Already rejected before (will not be asked): " + joinedRejectedBefore + "\n";
+				requestText.append(rejectedBeforeText);
+			}
+
+			requestText.append("\n");
 		}
 
 		String options = JbSupportSkillFixHierarchyConversation.getOptions(language);
 		requestText.append(options);
 		String text = requestText.toString();
 		return text;
+	}
+
+	private List<String> getSkillsOfTheType(List<CcpJsonRepresentation> items, String typeName) {
+		Stream<CcpJsonRepresentation> itemsStream = items.stream();
+		Stream<CcpJsonRepresentation> itemsOfTheTypeStream = itemsStream.filter(item -> typeName.equals(item.getAsString(VisEntitySkillFixHierarchyItemPending.Fields.type)));
+		Stream<String> skillsStream = itemsOfTheTypeStream.map(item -> item.getAsString(VisEntitySkillFixHierarchyItemPending.Fields.skill));
+		List<String> skills = skillsStream.collect(Collectors.toList());
+		return skills;
+	}
+
+	private List<String> getSkillsOfTheTypeWithTheDecision(List<CcpJsonRepresentation> decisions, String typeName, VisSkillFixHierarchyDecisions decision) {
+		String decisionName = decision.name();
+		Stream<CcpJsonRepresentation> decisionsStream = decisions.stream();
+		Stream<CcpJsonRepresentation> withTheDecisionStream = decisionsStream.filter(item -> decisionName.equals(item.getAsString(VisSkillFixHierarchyReviewFields.decision)));
+		List<CcpJsonRepresentation> withTheDecision = withTheDecisionStream.collect(Collectors.toList());
+		List<String> skills = this.getSkillsOfTheType(withTheDecision, typeName);
+		return skills;
 	}
 }

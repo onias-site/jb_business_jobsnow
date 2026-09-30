@@ -21,6 +21,7 @@ import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityField
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorArray;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
+import com.jb.business.bots.command.allowed.JbSupportAllowCommandToUserFields;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.login.token.JbSupportLoginToken;
 import com.jn.entities.decorators.builders.JnEntityVersionableBuilder;
@@ -68,10 +69,16 @@ public class JbEntityBotCommand implements CcpEntityConfigurator {
 		List<?> fixSkillHierarchyParameters = Arrays.asList(VisEntitySkillFixHierarchyPending.Fields.parent.name(), VisEntitySkillFixHierarchyPending.Fields.email.name());
 		CcpJsonRepresentation fixSkillHierarchy = fixSkillHierarchyWithName.put(JbEntityBotCommand.Fields.parameterName, fixSkillHierarchyParameters);
 
+		String allowCommandToUserName = JbSupportBotCommands.allowCommandToUser.name();
+		CcpJsonRepresentation allowCommandToUserWithName = CcpOtherConstants.EMPTY_JSON.put(JnJsonInstantMessengerFields.commandName, allowCommandToUserName);
+		List<?> allowCommandToUserParameters = Arrays.asList(JbSupportAllowCommandToUserFields.command.name(), JnJsonCommonsFields.email.name());
+		CcpJsonRepresentation allowCommandToUser = allowCommandToUserWithName.put(JbEntityBotCommand.Fields.parameterName, allowCommandToUserParameters);
+
 		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(
 				ENTITY
 				,data
 				,fixSkillHierarchy
+				,allowCommandToUser
 				);
 		return createBulkItems;
 	}

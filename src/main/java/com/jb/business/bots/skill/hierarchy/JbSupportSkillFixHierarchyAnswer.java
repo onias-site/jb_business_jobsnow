@@ -7,7 +7,8 @@ import com.vis.business.skill.VisSkillFixHierarchyDecisions;
 /**
  * What the operator typed in answer to a step of the {@code fixSkillHierarchy} command: a decision
  * ({@code aprovar}/{@code approve} or {@code rejeitar}/{@code reprovar}/{@code reject}) followed by the
- * justification, or {@code um a um}/{@code one by one} to decide item by item.
+ * justification, {@code um a um}/{@code one by one} to decide item by item, {@code ignorar}/{@code ignore} to
+ * ignore the user for the command, and {@code sim}/{@code yes} or {@code não}/{@code nao}/{@code no} to confirm it.
  */
 final class JbSupportSkillFixHierarchyAnswer {
 
@@ -31,6 +32,27 @@ final class JbSupportSkillFixHierarchyAnswer {
 		if(isOneByOne) {
 			JbSupportSkillFixHierarchyAnswer oneByOne = new JbSupportSkillFixHierarchyAnswer(JbSupportSkillFixHierarchyAnswerType.oneByOne, "");
 			return oneByOne;
+		}
+
+		boolean isIgnore = lowerCaseAnswer.equals("ignorar") || lowerCaseAnswer.equals("ignore");
+
+		if(isIgnore) {
+			JbSupportSkillFixHierarchyAnswer ignore = new JbSupportSkillFixHierarchyAnswer(JbSupportSkillFixHierarchyAnswerType.ignore, "");
+			return ignore;
+		}
+
+		boolean isYes = lowerCaseAnswer.equals("sim") || lowerCaseAnswer.equals("yes");
+
+		if(isYes) {
+			JbSupportSkillFixHierarchyAnswer yes = new JbSupportSkillFixHierarchyAnswer(JbSupportSkillFixHierarchyAnswerType.yes, "");
+			return yes;
+		}
+
+		boolean isNo = lowerCaseAnswer.equals("não") || lowerCaseAnswer.equals("nao") || lowerCaseAnswer.equals("no");
+
+		if(isNo) {
+			JbSupportSkillFixHierarchyAnswer no = new JbSupportSkillFixHierarchyAnswer(JbSupportSkillFixHierarchyAnswerType.no, "");
+			return no;
 		}
 
 		String[] firstWordAndTheRest = answer.split("\\s+", 2);
@@ -59,6 +81,21 @@ final class JbSupportSkillFixHierarchyAnswer {
 	boolean isOneByOne() {
 		boolean oneByOne = JbSupportSkillFixHierarchyAnswerType.oneByOne == this.type;
 		return oneByOne;
+	}
+
+	boolean isIgnore() {
+		boolean ignore = JbSupportSkillFixHierarchyAnswerType.ignore == this.type;
+		return ignore;
+	}
+
+	boolean isYes() {
+		boolean yes = JbSupportSkillFixHierarchyAnswerType.yes == this.type;
+		return yes;
+	}
+
+	boolean isNo() {
+		boolean no = JbSupportSkillFixHierarchyAnswerType.no == this.type;
+		return no;
 	}
 
 	/**

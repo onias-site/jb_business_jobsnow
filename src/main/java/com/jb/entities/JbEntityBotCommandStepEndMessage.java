@@ -20,6 +20,7 @@ import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityField
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
+import com.jb.business.bots.command.allowed.JbSupportAllowCommandToUserFields;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchyFields;
 import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchySteps;
@@ -87,7 +88,8 @@ public class JbEntityBotCommandStepEndMessage implements CcpEntityConfigurator {
 		List<String> stepNames = Arrays.asList(
 				JbSupportBotCommands.fixSkillHierarchy.name(),
 				JbSupportSkillFixHierarchySteps.fixSkillHierarchyChooseMode.name(),
-				JbSupportSkillFixHierarchySteps.fixSkillHierarchyDecideItem.name());
+				JbSupportSkillFixHierarchySteps.fixSkillHierarchyDecideItem.name(),
+				JbSupportSkillFixHierarchySteps.fixSkillHierarchyConfirmIgnore.name());
 		JnLanguage[] languages = JnLanguage.values();
 		List<CcpJsonRepresentation> endMessages = new ArrayList<>();
 
@@ -101,8 +103,38 @@ public class JbEntityBotCommandStepEndMessage implements CcpEntityConfigurator {
 			}
 		}
 
+		endMessages.addAll(this.getAllowCommandToUserEndMessages());
+
 		CcpJsonRepresentation[] endMessagesArray = endMessages.toArray(new CcpJsonRepresentation[endMessages.size()]);
 		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(ENTITY, endMessagesArray);
 		return createBulkItems;
+	}
+
+	/**
+	 * The {@code allowCommandToUser} command ends telling the operator that the requests of the user for the
+	 * command reach the support again.
+	 */
+	private List<CcpJsonRepresentation> getAllowCommandToUserEndMessages() {
+		String stepName = JbSupportBotCommands.allowCommandToUser.name();
+		String email = "{" + JnJsonCommonsFields.email + "}";
+		String command = "{" + JbSupportAllowCommandToUserFields.command + "}";
+
+		String portugueseMessage = "O usuário " + email + " não é mais ignorado no comando " + command + ": as próximas solicitações dele voltarão a chegar ao suporte.";
+		String englishMessage = "The user " + email + " is no longer ignored in the command " + command + ": their next requests will reach the support again.";
+		String spanishMessage = "El usuario " + email + " ya no es ignorado en el comando " + command + ": sus próximas solicitudes volverán a llegar al soporte.";
+
+		List<CcpJsonRepresentation> endMessages = new ArrayList<>();
+		endMessages.add(this.getEndMessage(stepName, JnLanguage.portuguese, portugueseMessage));
+		endMessages.add(this.getEndMessage(stepName, JnLanguage.english, englishMessage));
+		endMessages.add(this.getEndMessage(stepName, JnLanguage.spanish, spanishMessage));
+		return endMessages;
+	}
+
+	private CcpJsonRepresentation getEndMessage(String stepName, JnLanguage language, String message) {
+		CcpJsonRepresentation endMessageWithStepName = CcpOtherConstants.EMPTY_JSON.put(JnJsonInstantMessengerFields.stepName, stepName);
+		CcpJsonRepresentation endMessageWithLanguage = endMessageWithStepName.put(JnJsonCommonsFields.language, language);
+		CcpJsonRepresentation endMessageWithMessage = endMessageWithLanguage.put(JnJsonCommonsFields.message, message);
+		CcpJsonRepresentation endMessage = endMessageWithMessage.put(JnJsonInstantMessengerFields.instantMessageType, JnInstantMessageType.text);
+		return endMessage;
 	}
 }

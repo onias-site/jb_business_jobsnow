@@ -142,7 +142,7 @@ class BotCommand implements JbBotBusiness{
 		
 		String response = findFirst.orElse("");
 		return response;
-	}
+	} 
 
 	public String getIdentifier(CcpJsonRepresentation json) {
 		
