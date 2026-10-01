@@ -183,7 +183,7 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 	}
 
 	/**
-	 * {@code /fixSkillHierarchy <parent> <email>}: shows the request and goes on to the choice of how to decide
+	 * {@code /fixSkillHierarchy <parent> <type> <email>}: shows the request and goes on to the choice of how to decide
 	 * it. Without any item the session ends with a notice to the operator; when every item was decided in
 	 * earlier reviews, the review finishes right away with its summary; a user ignored for the command is not
 	 * reviewed, and the operator is told how to stop ignoring them.
@@ -193,10 +193,11 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 		String chooseMode = JbSupportSkillFixHierarchySteps.fixSkillHierarchyChooseMode.name();
 		String email = "{" + VisEntitySkillFixHierarchyPending.Fields.email + "}";
 		String parent = "{" + VisEntitySkillFixHierarchyPending.Fields.parent + "}";
+		String type = "{" + VisEntitySkillFixHierarchyPending.Fields.type + "}";
 
-		CcpJsonRepresentation portuguese = getStepFlowMessage(JnLanguage.portuguese, "Não há itens pendentes de ajuste na hierarquia de conhecimentos para o e-mail '" + email + "' e o termo '" + parent + "'");
-		CcpJsonRepresentation english = getStepFlowMessage(JnLanguage.english, "There are no pending skill hierarchy fix items for the e-mail '" + email + "' and the term '" + parent + "'");
-		CcpJsonRepresentation spanish = getStepFlowMessage(JnLanguage.spanish, "No hay ítems pendientes de ajuste en la jerarquía de conocimientos para el correo '" + email + "' y el término '" + parent + "'");
+		CcpJsonRepresentation portuguese = getStepFlowMessage(JnLanguage.portuguese, "Não há itens pendentes de ajuste (" + type + ") na hierarquia de conhecimentos para o e-mail '" + email + "' e o termo '" + parent + "'");
+		CcpJsonRepresentation english = getStepFlowMessage(JnLanguage.english, "There are no pending skill hierarchy fix items (" + type + ") for the e-mail '" + email + "' and the term '" + parent + "'");
+		CcpJsonRepresentation spanish = getStepFlowMessage(JnLanguage.spanish, "No hay ítems pendientes de ajuste (" + type + ") en la jerarquía de conocimientos para el correo '" + email + "' y el término '" + parent + "'");
 		int requestNotFound = JbSupportSkillFixHierarchyStatus.requestNotFound.asNumber();
 		CcpJsonRepresentation requestNotFoundFlow = getStepFlow(requestNotFound, "", portuguese, english, spanish);
 

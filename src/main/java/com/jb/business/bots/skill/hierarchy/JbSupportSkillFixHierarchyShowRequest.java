@@ -1,6 +1,7 @@
 package com.jb.business.bots.skill.hierarchy;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -26,10 +27,13 @@ import com.vis.json.fields.validation.VisSkillFixHierarchyTypes;
 import com.vis.json.fields.validation.VisUserRequestCommands;
 
 /**
- * First step of the {@code fixSkillHierarchy} command ({@code /fixSkillHierarchy <parent> <email>}): shows the
+ * First step of the {@code fixSkillHierarchy} command ({@code /fixSkillHierarchy <parent> <type> <email>}): shows the
  * operator the request of the user for that parent, with the justification the user gave ({@code description})
- * and the items still pending, and asks how to decide them. Both types of request ({@code add} and
- * {@code remove}) for the same parent are shown together.
+ * and the items still pending, and asks how to decide them. Only the request of the {@code type} given in the
+ * command ({@code add} or {@code remove}) is shown: the user associates and dissociates through different
+ * buttons, each one notifies the operator with its own command, and up to 2026-09-30 the command had no type,
+ * so the notice of a dissociation was indistinguishable from the one of an association. A {@code type} that is
+ * neither of them has no request to show ({@code requestNotFound}).
  *
  * <p>The {@code skill} of the request may list skills decided in earlier reviews. Those found in the rejected
  * items (the twin of {@link VisEntitySkillFixHierarchyItemPending}) or in
@@ -56,14 +60,16 @@ public class JbSupportSkillFixHierarchyShowRequest implements CcpBusiness {
 			JbSupportSkillFixHierarchyStatus.userNotAllowed.throwException(json);
 		}
 
-		CcpJsonRepresentation requestKey = json.getJsonPiece(VisEntitySkillFixHierarchyPending.Fields.email, VisEntitySkillFixHierarchyPending.Fields.parent);
-		VisSkillFixHierarchyTypes[] types = VisSkillFixHierarchyTypes.values();
-		List<CcpJsonRepresentation> requestKeys = new ArrayList<>();
+		String typeName = json.getAsString(VisEntitySkillFixHierarchyPending.Fields.type);
+		Stream<VisSkillFixHierarchyTypes> typesStream = Arrays.stream(VisSkillFixHierarchyTypes.values());
+		boolean unknownType = typesStream.noneMatch(type -> type.name().equals(typeName));
 
-		for (VisSkillFixHierarchyTypes type : types) {
-			CcpJsonRepresentation requestKeyWithType = requestKey.put(VisEntitySkillFixHierarchyPending.Fields.type, type);
-			requestKeys.add(requestKeyWithType);
+		if(unknownType) {
+			JbSupportSkillFixHierarchyStatus.requestNotFound.throwException(json);
 		}
+
+		CcpJsonRepresentation requestKeyOfTheType = json.getJsonPiece(VisEntitySkillFixHierarchyPending.Fields.email, VisEntitySkillFixHierarchyPending.Fields.parent, VisEntitySkillFixHierarchyPending.Fields.type);
+		List<CcpJsonRepresentation> requestKeys = Arrays.asList(requestKeyOfTheType);
 
 		CcpCrud crud = CcpDependencyInjection.getDependency(CcpCrud.class);
 		CcpJsonRepresentation[] requestKeysArray = requestKeys.toArray(new CcpJsonRepresentation[requestKeys.size()]);
@@ -165,11 +171,13 @@ public class JbSupportSkillFixHierarchyShowRequest implements CcpBusiness {
 		boolean portuguese = JbSupportSkillFixHierarchyConversation.isPortuguese(language);
 		String email = json.getAsString(VisEntitySkillFixHierarchyPending.Fields.email);
 		String parent = json.getAsString(VisEntitySkillFixHierarchyPending.Fields.parent);
+		VisSkillFixHierarchyTypes requestType = json.getAsEnum(VisEntitySkillFixHierarchyPending.Fields.type, VisSkillFixHierarchyTypes.class);
+		String requestTypeDescription = requestType.getDescription(language);
 
 		StringBuilder requestText = new StringBuilder();
 		String header = portuguese
-				? "Solicitação de " + email + " para o termo " + parent + "\n\n"
-				: "Request from " + email + " for the term " + parent + "\n\n";
+				? "Solicitação de " + requestTypeDescription + " de " + email + " para o termo " + parent + "\n\n"
+				: "Request of " + requestTypeDescription + " from " + email + " for the term " + parent + "\n\n";
 		requestText.append(header);
 
 		for (CcpJsonRepresentation request : foundRequests) {

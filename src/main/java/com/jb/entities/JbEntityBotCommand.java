@@ -66,7 +66,8 @@ public class JbEntityBotCommand implements CcpEntityConfigurator {
 		
 		String fixSkillHierarchyName = JbSupportBotCommands.fixSkillHierarchy.name();
 		CcpJsonRepresentation fixSkillHierarchyWithName = CcpOtherConstants.EMPTY_JSON.put(JnJsonInstantMessengerFields.commandName, fixSkillHierarchyName);
-		List<?> fixSkillHierarchyParameters = Arrays.asList(VisEntitySkillFixHierarchyPending.Fields.parent.name(), VisEntitySkillFixHierarchyPending.Fields.email.name());
+		// /fixSkillHierarchy <parent> <type> <email>: the operator reviews one type (add or remove) at a time
+		List<?> fixSkillHierarchyParameters = Arrays.asList(VisEntitySkillFixHierarchyPending.Fields.parent.name(), VisEntitySkillFixHierarchyPending.Fields.type.name(), VisEntitySkillFixHierarchyPending.Fields.email.name());
 		CcpJsonRepresentation fixSkillHierarchy = fixSkillHierarchyWithName.put(JbEntityBotCommand.Fields.parameterName, fixSkillHierarchyParameters);
 
 		String allowCommandToUserName = JbSupportBotCommands.allowCommandToUser.name();
