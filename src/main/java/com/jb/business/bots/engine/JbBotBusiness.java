@@ -25,7 +25,7 @@ interface JbBotBusiness extends CcpBusiness{
 	
 	default boolean hasPriority(CcpJsonRepresentation json) {
 		return false;
-	}
+	} 
 	
 	default Bot getBot(CcpJsonRepresentation json) {
 		String name = json.getAsString(JnJsonInstantMessengerFields.botName);

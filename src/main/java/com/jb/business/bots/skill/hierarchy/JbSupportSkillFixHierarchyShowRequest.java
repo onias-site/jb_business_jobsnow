@@ -23,7 +23,7 @@ import com.vis.entities.VisEntityCommandNotAllowedToUser;
 import com.vis.entities.VisEntitySkillFixHierarchyItemApproved;
 import com.vis.entities.VisEntitySkillFixHierarchyItemPending;
 import com.vis.entities.VisEntitySkillFixHierarchyPending;
-import com.vis.json.fields.validation.VisSkillFixHierarchyTypes;
+import com.vis.json.fields.validation.VisSkillFixHierarchyTypes; 
 import com.vis.json.fields.validation.VisUserRequestCommands;
 
 /**
