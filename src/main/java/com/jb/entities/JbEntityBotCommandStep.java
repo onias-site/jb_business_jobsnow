@@ -29,6 +29,10 @@ import com.jb.business.bots.command.allowed.JbSupportAllowCommandToUserStatus;
 import com.jb.business.bots.command.allowed.JbSupportAllowCommandToUserFields;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.login.token.JbSupportLoginToken;
+import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsChoose;
+import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsShow;
+import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsStatus;
+import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsSteps;
 import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchyChooseMode;
 import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchyConfirmIgnore;
 import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchyDecideItem;
@@ -46,31 +50,45 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.jn.utils.JnLanguage;
 import com.vis.entities.VisEntitySkillFixHierarchyPending;
 
+/**
+ * A step of a bot command: the business it runs ({@code engine}), the step that follows ({@code nextStep}) and, by status of a {@code CcpErrorFlowDisturb} thrown by the engine, the messages to send and the step to go to ({@code stepFlow}).
+ * <p>
+ * Configuration:
+ * <ul>
+ * <li>index {@code jb_bot_command_step}</li>
+ * <li>records cached for 3600 seconds</li>
+ * <li>versionable: every write keeps the previous state in {@code jn_versionable}</li>
+ * </ul>
+ */
 @CcpEntityCache(3600)
 @CcpEntityCustomDecorators(value = {@CcpEntityCustomDecorator(value = JnEntityVersionableBuilder.class, priority = 2),@CcpEntityCustomDecorator(value = JnEntityVersionablePurgeBuilder.class, priority = 5),})
 @JnEntityVersionable(JnVersionableEntity.class)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandStep.Fields.class)
-/**
- * Entidade que define um passo de um comando de bot: o motor de negócio a instanciar via
- * reflexão ({@code engine}), o próximo passo ({@code nextStep}) e o mapeamento de status de
- * erro para passos alternativos ({@code stepFlow}). Versionável, cache de 1 hora.
- */
 public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 
+	/** The entity {@code jb_bot_command_step}, with every decorator of this configuration. */
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommandStep.class).entityInstance;
 	
+	/**
+	 * The fields of the entity, with their validation rules (this enum is the class named by
+	 * {@code @CcpEntityFieldsValidator}).
+	 */
 	public static enum Fields implements CcpJsonFieldName{
+		/** The {@code stepName} field: part of the primary key, validated as in {@code JnJsonInstantMessengerFields}. */
 		@CcpEntityFieldPrimaryKey
 		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		stepName, 
+		/** The {@code stepFlow} field: required, list, nested JSON. */
 		@CcpJsonFieldValidatorRequired
 		@CcpJsonFieldValidatorArray(minSize = 1)
 		@CcpJsonFieldTypeNestedJson(jsonValidation = JbNextStepFields.class)
 		stepFlow,
+		/** The {@code engine} field: required, text. */
 		@CcpJsonFieldValidatorRequired
 		@CcpJsonFieldTypeString
 		engine,
+		/** The {@code nextStep} field: text. */
 		@CcpJsonFieldTypeString
 		nextStep,
 		;
@@ -78,11 +96,15 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 	
 	
 	/**
-	 * Monta um registro completo desta entidade, pronto para {@code ENTITY.save(...)}. O parâmetro
-	 * {@code stepFlow} é alimentado por {@link #getStepFlow(Integer, String, CcpJsonRepresentation...)}
-	 * e precisa ter ao menos um item, conforme {@code @CcpJsonFieldValidatorArray(minSize = 1)}.
-	 * {@code nextStep} é omitido do JSON quando vem em branco, pelo mesmo critério de
-	 * {@link #getStepFlow(Integer, String, CcpJsonRepresentation...)}.
+	 * Builds a complete record of this entity, ready for {@code ENTITY.save(...)}. The {@code stepFlow} items come from
+	 * {@link #getStepFlow(Integer, String, CcpJsonRepresentation...)} and there must be at least one, as
+	 * {@code @CcpJsonFieldValidatorArray(minSize = 1)} requires. {@code nextStep} is left out of the JSON when blank, by the
+	 * same criterion as {@link #getStepFlow(Integer, String, CcpJsonRepresentation...)}.
+	 * @param stepName the name of the step
+	 * @param engine the business run by the step
+	 * @param nextStep the step that follows, blank for none
+	 * @param stepFlow the flow items
+	 * @return the record
 	 */
 	public static CcpJsonRepresentation getBotCommandStep(String stepName, Class<?> engine, String nextStep, CcpJsonRepresentation... stepFlow) {
 
@@ -104,12 +126,15 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 	}
 
 	/**
-	 * Monta um item do {@code stepFlow}, no formato definido por {@code JbNextStepFields}: o status de
-	 * erro que dispara o desvio, o passo alternativo e as mensagens enviadas ao usuário. O parâmetro
-	 * {@code message} é alimentado por {@link #getStepFlowMessage(JnLanguage, String)}. Tanto
-	 * {@code message} (varargs vazio) quanto {@code nextStep} (string em branco) são omitidos do JSON:
-	 * gravá-los vazios violaria o {@code @CcpJsonFieldValidatorArray(minSize = 1)} do primeiro e
-	 * satisfaria indevidamente o {@code requiresAtLeastOne} entre os dois.
+	 * Builds a {@code stepFlow} item, in the format of {@code JbNextStepFields}: the status that triggers the diversion, the
+	 * alternative step and the messages sent to the user. The messages come from
+	 * {@link #getStepFlowMessage(JnLanguage, String)}. Both {@code message} (empty varargs) and {@code nextStep} (blank) are
+	 * left out of the JSON: writing them empty would break the {@code @CcpJsonFieldValidatorArray(minSize = 1)} of the first
+	 * and wrongly satisfy the {@code requiresAtLeastOne} between the two.
+	 * @param status the status
+	 * @param nextStep the alternative step, blank for none
+	 * @param message the messages
+	 * @return the flow item
 	 */
 	public static CcpJsonRepresentation getStepFlow(Integer status, String nextStep, CcpJsonRepresentation... message) {
 
@@ -134,8 +159,11 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 	}
 
 	/**
-	 * Monta uma mensagem de um item do {@code stepFlow}, no formato definido por
-	 * {@code NextStepMessageFields}: o idioma e o texto enviado ao usuário.
+	 * Builds a message of a {@code stepFlow} item, in the format of {@code JbNextStepMessageFields}: the language and the
+	 * text sent to the user.
+	 * @param language the language
+	 * @param message the text
+	 * @return the message
 	 */
 	public static CcpJsonRepresentation getStepFlowMessage(JnLanguage language, String message) {
 
@@ -147,6 +175,10 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 		return stepFlowMessage;
 	}
 
+	/**
+	 * Seeds the steps of the support commands, with their engines, next steps and flow items.
+	 * @return the seed records
+	 */
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
 
 		String solveLoginTokenTicket = JbSupportBotCommands.solveLoginTokenTicket.name();
@@ -164,13 +196,15 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 				, this.getChooseSkillFixHierarchyReviewModeStep()
 				, this.getDecideSkillFixHierarchyItemStep()
 				, this.getConfirmSkillFixHierarchyIgnoreStep()
-				, this.getAllowCommandToUserStep());
+				, this.getAllowCommandToUserStep()
+				, this.getPendingTicketsStep()
+				, this.getChoosePendingTicketStep());
 
 		return createBulkItems;
 	}
 
 	/**
-	 * The flow messages of the {@code fixSkillHierarchy} steps are the text the engine of the step left in
+	 * The flow messages of the {@code fixSkillHierarchy} and {@code pendingTickets} steps are the text the engine of the step left in
 	 * {@code botReply}, whatever the language: the engine already writes it in the language of the session.
 	 */
 	private CcpJsonRepresentation[] getBotReplyInEveryLanguage() {
@@ -253,6 +287,42 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 		CcpJsonRepresentation userNotIgnoredFlow = getStepFlow(userNotIgnored, "", portuguese, english, spanish);
 
 		CcpJsonRepresentation step = getBotCommandStep(commandName, JbSupportAllowCommandToUser.class, "", userNotIgnoredFlow);
+		return step;
+	}
+
+	/**
+	 * {@code /pendingTickets}: shows how many tickets the operator has and the oldest one, and goes on to the
+	 * choice between solving it and going to the next one. Without any ticket the session ends with that notice.
+	 */
+	private CcpJsonRepresentation getPendingTicketsStep() {
+		String commandName = JbSupportBotCommands.pendingTickets.name();
+		String choose = JbSupportPendingTicketsSteps.pendingTicketsChoose.name();
+		CcpJsonRepresentation[] botReply = this.getBotReplyInEveryLanguage();
+
+		int noPendingTicket = JbSupportPendingTicketsStatus.noPendingTicket.asNumber();
+		CcpJsonRepresentation noPendingTicketFlow = getStepFlow(noPendingTicket, "", botReply);
+
+		CcpJsonRepresentation step = getBotCommandStep(commandName, JbSupportPendingTicketsShow.class, choose, noPendingTicketFlow);
+		return step;
+	}
+
+	/**
+	 * Solve the ticket shown (ending the session, after which the bot starts the command of the ticket) or go to
+	 * the next one (repeating this step). An answer not understood repeats this step, and a list that became
+	 * empty in the meantime ends the session.
+	 */
+	private CcpJsonRepresentation getChoosePendingTicketStep() {
+		String choose = JbSupportPendingTicketsSteps.pendingTicketsChoose.name();
+		CcpJsonRepresentation[] botReply = this.getBotReplyInEveryLanguage();
+
+		int invalidAnswer = JbSupportPendingTicketsStatus.invalidAnswer.asNumber();
+		int noPendingTicket = JbSupportPendingTicketsStatus.noPendingTicket.asNumber();
+		int ticketChosen = JbSupportPendingTicketsStatus.ticketChosen.asNumber();
+		CcpJsonRepresentation invalidAnswerFlow = getStepFlow(invalidAnswer, choose, botReply);
+		CcpJsonRepresentation noPendingTicketFlow = getStepFlow(noPendingTicket, "", botReply);
+		CcpJsonRepresentation ticketChosenFlow = getStepFlow(ticketChosen, "", botReply);
+
+		CcpJsonRepresentation step = getBotCommandStep(choose, JbSupportPendingTicketsChoose.class, choose, invalidAnswerFlow, noPendingTicketFlow, ticketChosenFlow);
 		return step;
 	}
 

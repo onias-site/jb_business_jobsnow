@@ -9,7 +9,10 @@ import com.ccp.decorators.CcpJsonFieldName;
  * {@code itemIndex} is the item being decided in the one by one review.
  */
 public enum JbSupportSkillFixHierarchyFields implements CcpJsonFieldName{
+	/** The {@code botReply} field. */
 	botReply,
+	/** The {@code reviewItems} field. */
 	reviewItems,
+	/** The {@code itemIndex} field. */
 	itemIndex
 }

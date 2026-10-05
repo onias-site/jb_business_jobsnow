@@ -22,6 +22,12 @@ import com.vis.entities.VisEntitySkillFixHierarchyItemPending;
  */
 public class JbSupportSkillFixHierarchyChooseMode implements CcpBusiness {
 
+	/**
+	 * Handles the choice of the operator.
+	 * @param json the session, with the items to review
+	 * @return the session asking for the first item, when the operator chose one by one
+	 * @throws CcpErrorFlowDisturb with {@code reviewFinished}, {@code ignoreConfirmationAsked} or {@code invalidAnswer}
+	 */
 	public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 
 		JbSupportSkillFixHierarchyAnswer answer = JbSupportSkillFixHierarchyAnswer.read(json);

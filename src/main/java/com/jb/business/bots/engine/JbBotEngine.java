@@ -33,28 +33,31 @@ import com.jn.utils.JnDeleteKeysFromCache;
 import com.jn.utils.JnLanguage;
 
 /**
- * Motor central dos bots de suporte Telegram do jobsnow. Inicializado como singleton,
- * carrega do Elasticsearch toda a configuração dos bots (tipos, comandos, passos, mensagens,
- * usuários permitidos e explicações) e gerencia o fluxo de interação multi-passo: receber
- * texto do usuário, identificar o bot e o comando, avançar a sessão e enviar respostas.
+ * The engine of the support bots. A singleton that loads from the database the whole configuration of the bots (types,
+ * commands, steps, messages, allowed users and explanations) and keeps them in memory.
  */
 public class JbBotEngine {
 	
+	/** The single instance. */
 	static final JbBotEngine INSTANCE = new JbBotEngine();
 
+	/** The commands by name. */
 	final Map<String, BotCommand> allCommands = new HashMap<>();
 	
+	/** The steps by name. */
 	final Map<String, JbBotBusiness> allSteps;
 
+	/** The bots by type. */
 	final Map<CcpJsonFieldName, Bot> allBots;
 	
+	/** Singleton; use {@link #INSTANCE}. */
 	private JbBotEngine() {
 		
 		JbBotType[] bots = JbBotType.values();
 		JnLanguage[] jnLanguageValues = JnLanguage.values();
-		int lengthVezes = bots.length * jnLanguageValues.length;
+		int botsTimesLanguages = bots.length * jnLanguageValues.length;
 
-		CcpJsonRepresentation[] parametersToSearchBots = new CcpJsonRepresentation[lengthVezes];
+		CcpJsonRepresentation[] parametersToSearchBots = new CcpJsonRepresentation[botsTimesLanguages];
 	
 		var languages = JnLanguage.values();
 		
@@ -175,8 +178,8 @@ public class JbBotEngine {
 		Collection<CcpJsonRepresentation> parametersToSearchSteps = allSteps.values();
 		int parametersToSearchStepsSize = parametersToSearchSteps.size();
 		JnLanguage[] jnLanguageValues2 = JnLanguage.values();
-		int parametersToSearchStepsSizeVezes = parametersToSearchStepsSize * jnLanguageValues2.length;
-		CcpJsonRepresentation[] parametersToSearchAllSteps = new CcpJsonRepresentation[parametersToSearchStepsSizeVezes];
+		int stepsTimesLanguages = parametersToSearchStepsSize * jnLanguageValues2.length;
+		CcpJsonRepresentation[] parametersToSearchAllSteps = new CcpJsonRepresentation[stepsTimesLanguages];
 		k = 0;
 		
 		for (CcpJsonRepresentation step : parametersToSearchSteps) {
@@ -268,8 +271,16 @@ public class JbBotEngine {
 		}
 	}
 
+	/** Fields used by the engine. */
 	static enum Fields implements CcpJsonFieldName{
-		bots, replyTo, commandParameters, message_id
+		/** The {@code bots} field. */
+		bots,
+		/** The {@code replyTo} field. */
+		replyTo,
+		/** The {@code commandParameters} field. */
+		commandParameters,
+		/** The {@code message_id} field. */
+		message_id
 	}
 	
 

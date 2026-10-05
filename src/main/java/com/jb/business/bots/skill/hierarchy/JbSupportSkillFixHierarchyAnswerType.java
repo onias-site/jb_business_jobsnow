@@ -6,11 +6,18 @@ package com.jb.business.bots.skill.hierarchy;
  * answer to its confirmation ({@code yes}, {@code no}).
  */
 enum JbSupportSkillFixHierarchyAnswerType {
+	/** Approve, with a justification. */
 	approve,
+	/** Reject, with a justification. */
 	reject,
+	/** Decide item by item. */
 	oneByOne,
+	/** Ignore the user for the command. */
 	ignore,
+	/** Confirm. */
 	yes,
+	/** Decline. */
 	no,
+	/** Anything else. */
 	notUnderstood
 }

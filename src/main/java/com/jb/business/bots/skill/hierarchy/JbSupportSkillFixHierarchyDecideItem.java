@@ -19,6 +19,12 @@ import com.vis.entities.VisEntitySkillFixHierarchyItemPending;
  */
 public class JbSupportSkillFixHierarchyDecideItem implements CcpBusiness {
 
+	/**
+	 * Records the decision on the current item and asks for the next one, or finishes the review after the last.
+	 * @param json the session, with {@code itemIndex}
+	 * @return the session asking for the next item
+	 * @throws CcpErrorFlowDisturb with {@code reviewFinished} or {@code invalidAnswer}
+	 */
 	public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 
 		int itemIndex = json.getAsIntegerNumber(JbSupportSkillFixHierarchyFields.itemIndex);

@@ -2,7 +2,6 @@ package com.jb.entities;
 
 import com.ccp.decorators.CcpJsonFieldName;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
-import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCache;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityFieldsTransformer;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityFieldsValidator;
 import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityFactory;
@@ -10,27 +9,27 @@ import com.ccp.especifications.db.utils.entity.decorators.interfaces.CcpEntityCo
 import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityFieldPrimaryKey;
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
-import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeNumber;
+import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
+import com.jn.entities.JnEntitySupportPendingCommand;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
+import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
 /**
- * The last update id read from the messenger by each bot, so the listener does not read the same message twice.
+ * The tickets (commands sent by the platform to the support operator) the operator has not solved yet, listed by {@code /pendingTickets}; a ticket leaves the list when the command that solves it finishes.
  * <p>
  * Configuration:
  * <ul>
- * <li>index {@code jb_bot_update_id}</li>
- * <li>records cached for 3600 seconds</li>
+ * <li>index {@code jb_pending_tickets}</li>
  * </ul>
  */
-@CcpEntityCache(3600)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
-@CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotUpdateId.Fields.class)
-public class JbEntityBotUpdateId implements CcpEntityConfigurator {
+@CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityPendingTickets.Fields.class)
+public class JbEntityPendingTickets implements CcpEntityConfigurator {
 
-	/** The entity {@code jb_bot_update_id}, with every decorator of this configuration. */
-	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotUpdateId.class).entityInstance;
-	
+	/** The entity {@code jb_pending_tickets}, with every decorator of this configuration. */
+	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityPendingTickets.class).entityInstance;
+
 	/**
 	 * The fields of the entity, with their validation rules (this enum is the class named by
 	 * {@code @CcpEntityFieldsValidator}).
@@ -39,14 +38,22 @@ public class JbEntityBotUpdateId implements CcpEntityConfigurator {
 		/** The {@code botName} field: part of the primary key, validated as in {@code JnJsonInstantMessengerFields}. */
 		@CcpEntityFieldPrimaryKey
 		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
-		botName, 
+		botName,
 
-		/** The {@code updateId} field: required, decimal number. */
+		/** The {@code chatId} field: part of the primary key, validated as in {@code JnJsonInstantMessengerFields}. */
+		@CcpEntityFieldPrimaryKey
+		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
+		chatId,
+
+		/** The {@code ticket} field: part of the primary key, text. */
+		@CcpEntityFieldPrimaryKey
+		@CcpJsonFieldTypeString
+		ticket,
+
+		/** The {@code timestamp} field: required, validated as in {@code JnJsonCommonsFields}. */
 		@CcpJsonFieldValidatorRequired
-		@CcpJsonFieldTypeNumber(minValue = 0)
-		updateId
+		@CcpJsonCopyFieldValidationsFrom(JnJsonCommonsFields.class)
+		timestamp,
 		;
 	}
-	
-	
 }

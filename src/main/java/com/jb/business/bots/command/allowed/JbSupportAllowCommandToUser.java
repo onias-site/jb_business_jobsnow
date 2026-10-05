@@ -15,6 +15,12 @@ import com.vis.entities.VisEntityCommandNotAllowedToUser;
  */
 public class JbSupportAllowCommandToUser implements CcpBusiness {
 
+	/**
+	 * Deletes the record of the ignored user and command.
+	 * @param json the session, with {@code email} and {@code command}
+	 * @return the session
+	 * @throws CcpErrorFlowDisturb with {@code userNotIgnored} when there is no such record
+	 */
 	public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 
 		String email = json.getAsString(JnJsonCommonsFields.email);

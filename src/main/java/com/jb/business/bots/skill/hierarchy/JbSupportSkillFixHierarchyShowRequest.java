@@ -49,6 +49,12 @@ import com.vis.json.fields.validation.VisUserRequestCommands;
  */
 public class JbSupportSkillFixHierarchyShowRequest implements CcpBusiness {
 
+	/**
+	 * Shows the request and its pending items.
+	 * @param json the session, with {@code parent}, {@code type} and {@code email}
+	 * @return the session with the items to review, the earlier decisions and the reply
+	 * @throws CcpErrorFlowDisturb with {@code userNotAllowed}, {@code requestNotFound} or {@code reviewFinished}
+	 */
 	public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 
 		String email = json.getAsString(VisEntitySkillFixHierarchyPending.Fields.email);
@@ -165,6 +171,15 @@ public class JbSupportSkillFixHierarchyShowRequest implements CcpBusiness {
 		return jsonWithReply;
 	}
 
+	/**
+	 * Builds the text of the request: a header, then for each type the justification of the user, the pending items and the
+	 * items decided before, and finally the options (see finding: the texts are literals, not system messages).
+	 * @param json the session
+	 * @param foundRequests the pending requests
+	 * @param reviewItems the items to review
+	 * @param previousDecisions the items decided before
+	 * @return the text
+	 */
 	private String getRequestText(CcpJsonRepresentation json, List<CcpJsonRepresentation> foundRequests, List<CcpJsonRepresentation> reviewItems, List<CcpJsonRepresentation> previousDecisions) {
 
 		JnLanguage language = JbSupportSkillFixHierarchyConversation.getLanguage(json);
@@ -237,6 +252,12 @@ public class JbSupportSkillFixHierarchyShowRequest implements CcpBusiness {
 		return text;
 	}
 
+	/**
+	 * Returns the skills of the items of the type.
+	 * @param items the items
+	 * @param typeName the type
+	 * @return the skills
+	 */
 	private List<String> getSkillsOfTheType(List<CcpJsonRepresentation> items, String typeName) {
 		Stream<CcpJsonRepresentation> itemsStream = items.stream();
 		Stream<CcpJsonRepresentation> itemsOfTheTypeStream = itemsStream.filter(item -> typeName.equals(item.getAsString(VisEntitySkillFixHierarchyItemPending.Fields.type)));
@@ -245,6 +266,13 @@ public class JbSupportSkillFixHierarchyShowRequest implements CcpBusiness {
 		return skills;
 	}
 
+	/**
+	 * Returns the skills of the items of the type with the decision.
+	 * @param decisions the decisions
+	 * @param typeName the type
+	 * @param decision the decision
+	 * @return the skills
+	 */
 	private List<String> getSkillsOfTheTypeWithTheDecision(List<CcpJsonRepresentation> decisions, String typeName, VisSkillFixHierarchyDecisions decision) {
 		String decisionName = decision.name();
 		Stream<CcpJsonRepresentation> decisionsStream = decisions.stream();

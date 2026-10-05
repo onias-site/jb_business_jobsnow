@@ -11,10 +11,17 @@ import com.jb.entities.JbEntityBotCommandStepSession;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 
+/** Transformations of the session JSON. */
 @SuppressWarnings("unchecked")
 enum JsonProducers implements CcpBusiness{
+	/** Builds the record of the session: the session fields plus, in {@code json}, every other value. */
 	sessionValuesProducer{
 
+		/**
+		 * Builds the record of the session.
+		 * @param newJson the session
+		 * @return the session record
+		 */
 		public CcpJsonRepresentation apply(CcpJsonRepresentation newJson) {
 			CcpJsonFieldName[] sessionFields = JbEntityBotCommandStepSession.Fields.values();
 			
@@ -30,30 +37,54 @@ enum JsonProducers implements CcpBusiness{
 			return sessionValuesToSave;
 		}
 	},
+	/** Reads the {@code json} field as JSON when it is one; otherwise wraps it. */
 	handleInnerJson{
 
+		/**
+		 * Handles the {@code json} field.
+		 * @param json the session fields
+		 * @return the inner JSON
+		 */
 		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 			CcpJsonRepresentation transformedJsonWhenAllConditionsMatch = json.getTransformedJsonWhenAllConditionsMatch(getInnerJson, createInnerJson, JsonConditions.thisFieldIsValidJson);
 			return transformedJsonWhenAllConditionsMatch;
 		}
 	},
+	/** Wraps the value of the {@code json} field. */
 	createInnerJson{
 
+		/**
+		 * Wraps the value.
+		 * @param json the session fields
+		 * @return a JSON with the {@code json} field only
+		 */
 		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 			var get = json.get(jsonFieldName);
 			CcpJsonRepresentation put = CcpOtherConstants.EMPTY_JSON.put(jsonFieldName, get);
 			return put;
 		}
 	},
+	/** Reads the {@code json} field as JSON. */
 	getInnerJson{
 
+		/**
+		 * Reads the inner JSON.
+		 * @param json the session fields
+		 * @return the inner JSON
+		 */
 		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 			CcpJsonRepresentation innerJson = json.getInnerJson(jsonFieldName);
 			return innerJson;
 		}
 	},
+	/** Without a session, starts the visible command typed by the user, or {@code showAllCommands} when none was typed. */
 	putCommandNameWhenHasNoSession{
 
+		/**
+		 * Puts the command and the step.
+		 * @param json the message
+		 * @return the session at the start of the command
+		 */
 		public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 			
 			Collection<BotCommand> allCommands = JbBotEngine.INSTANCE.allCommands.values();
@@ -82,5 +113,6 @@ enum JsonProducers implements CcpBusiness{
 		}
 	},
 	;
+	/** The {@code json} field. */
 	static final CcpJsonFieldName jsonFieldName = JnJsonCommonsFields.json;
 }

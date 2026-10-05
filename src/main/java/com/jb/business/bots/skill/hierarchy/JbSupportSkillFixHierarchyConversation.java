@@ -16,13 +16,19 @@ import com.vis.json.fields.validation.VisSkillFixHierarchyTypes;
 
 /**
  * Texts sent to the support bot operator along the {@code fixSkillHierarchy} command, in the language of the
- * session (Portuguese, or English for the other languages), and the end of the review, shared by the steps
- * that can finish it.
+ * session, and the end of the review, shared by the steps that can finish it. The texts themselves live in
+ * {@link JbSupportSkillFixHierarchyMessages}.
  */
 final class JbSupportSkillFixHierarchyConversation {
 
+	/** Utility class; not instantiable. */
 	private JbSupportSkillFixHierarchyConversation() {}
 
+	/**
+	 * Returns the language of the session (the enum itself or its name), Portuguese by default.
+	 * @param json the session
+	 * @return the language
+	 */
 	static JnLanguage getLanguage(CcpJsonRepresentation json) {
 		// the language may be in the json as the enum itself or as its name
 		String languageName = json.getAsString(JnJsonCommonsFields.language);
@@ -31,48 +37,34 @@ final class JbSupportSkillFixHierarchyConversation {
 		return language;
 	}
 
+	/**
+	 * Tells whether the language is Portuguese.
+	 * @param language the language
+	 * @return {@code true} for Portuguese
+	 */
 	static boolean isPortuguese(JnLanguage language) {
 		boolean portuguese = JnLanguage.portuguese == language;
 		return portuguese;
 	}
 
+	/**
+	 * Returns the options offered to the operator.
+	 * @param language the language
+	 * @return the options
+	 */
 	static String getOptions(JnLanguage language) {
-
-		boolean portuguese = isPortuguese(language);
-
-		if(portuguese) {
-			return "Responda com uma das opções:\n"
-					+ "• aprovar <justificativa> — aprova todos os itens pendentes\n"
-					+ "• rejeitar <justificativa> — rejeita todos os itens pendentes\n"
-					+ "• um a um — decide item por item\n"
-					+ "• ignorar — descarta a solicitação e ignora as próximas deste usuário neste comando";
-		}
-
-		return "Answer with one of the options:\n"
-				+ "• approve <justification> — approves all the pending items\n"
-				+ "• reject <justification> — rejects all the pending items\n"
-				+ "• one by one — decides item by item\n"
-				+ "• ignore — discards the request and ignores the next ones of this user in this command";
+		String options = JbSupportSkillFixHierarchyMessages.options.getMessage(language);
+		return options;
 	}
 
 	/**
 	 * Asks the operator to confirm that the user will be ignored for the command.
 	 */
 	static String getIgnoreConfirmation(CcpJsonRepresentation json) {
-
 		JnLanguage language = getLanguage(json);
-		String email = json.getAsString(VisEntitySkillFixHierarchyPending.Fields.email);
-		boolean portuguese = isPortuguese(language);
-
-		if(portuguese) {
-			return "Confirma que o usuário " + email + " será ignorado no comando fixSkillHierarchy? "
-					+ "Esta solicitação será descartada sem aviso ao usuário e as próximas não chegarão mais a você.\n"
-					+ "Responda: sim ou não";
-		}
-
-		return "Do you confirm that the user " + email + " will be ignored in the fixSkillHierarchy command? "
-				+ "This request will be discarded without notifying the user and the next ones will no longer reach you.\n"
-				+ "Answer: yes or no";
+		CcpJsonRepresentation parameters = json.getJsonPiece(VisEntitySkillFixHierarchyPending.Fields.email);
+		String ignoreConfirmation = JbSupportSkillFixHierarchyMessages.ignoreConfirmation.getMessage(language, parameters);
+		return ignoreConfirmation;
 	}
 
 	/**
@@ -80,28 +72,20 @@ final class JbSupportSkillFixHierarchyConversation {
 	 * asked about again.
 	 */
 	static String getPreviousDecisionJustification(JnLanguage language, VisSkillFixHierarchyDecisions decision) {
-
-		boolean portuguese = isPortuguese(language);
 		boolean approved = VisSkillFixHierarchyDecisions.approved == decision;
-
-		if(portuguese) {
-			String previousDecisionJustification = approved ? "item já aprovado em revisão anterior" : "item já reprovado em revisão anterior";
-			return previousDecisionJustification;
-		}
-
-		String previousDecisionJustification = approved ? "item already approved in an earlier review" : "item already rejected in an earlier review";
+		JbSupportSkillFixHierarchyMessages previousDecision = approved ? JbSupportSkillFixHierarchyMessages.previousDecisionApproved : JbSupportSkillFixHierarchyMessages.previousDecisionRejected;
+		String previousDecisionJustification = previousDecision.getMessage(language);
 		return previousDecisionJustification;
 	}
 
+	/**
+	 * Returns the notice of an answer not understood.
+	 * @param language the language
+	 * @return the notice
+	 */
 	static String getNotUnderstood(JnLanguage language) {
-
-		boolean portuguese = isPortuguese(language);
-
-		if(portuguese) {
-			return "Não entendi a resposta. Toda decisão precisa vir acompanhada de uma justificativa.\n\n";
-		}
-
-		return "I did not understand the answer. Every decision needs to come with a justification.\n\n";
+		String notUnderstood = JbSupportSkillFixHierarchyMessages.notUnderstood.getMessage(language);
+		return notUnderstood;
 	}
 
 	/**
@@ -112,22 +96,22 @@ final class JbSupportSkillFixHierarchyConversation {
 		JnLanguage language = getLanguage(json);
 		List<CcpJsonRepresentation> reviewItems = json.getAsJsonList(JbSupportSkillFixHierarchyFields.reviewItems);
 		CcpJsonRepresentation item = reviewItems.get(itemIndex);
-		String skill = item.getAsString(VisEntitySkillFixHierarchyItemPending.Fields.skill);
 		VisSkillFixHierarchyTypes type = item.getAsEnum(VisEntitySkillFixHierarchyItemPending.Fields.type, VisSkillFixHierarchyTypes.class);
 		String typeDescription = type.getDescription(language);
-		String parent = json.getAsString(VisEntitySkillFixHierarchyPending.Fields.parent);
 		int itemNumber = itemIndex + 1;
 		int itemsCount = reviewItems.size();
 
-		boolean portuguese = isPortuguese(language);
+		String parent = json.getAsString(VisEntitySkillFixHierarchyPending.Fields.parent);
+		CcpJsonRepresentation itemSkill = item.getJsonPiece(VisEntitySkillFixHierarchyItemPending.Fields.skill);
+		CcpJsonRepresentation itemWithParent = itemSkill.put(VisEntitySkillFixHierarchyPending.Fields.parent, parent);
 
-		if(portuguese) {
-			return "Item " + itemNumber + " de " + itemsCount + ": " + skill + " (" + typeDescription + " com o termo " + parent + ")\n"
-					+ "Responda: aprovar <justificativa> ou rejeitar <justificativa>";
-		}
+		CcpJsonRepresentation parameters = itemWithParent
+				.put(JbSupportSkillFixHierarchyMessageFields.typeDescription, typeDescription)
+				.put(JbSupportSkillFixHierarchyMessageFields.itemNumber, itemNumber)
+				.put(JbSupportSkillFixHierarchyMessageFields.itemsCount, itemsCount);
 
-		return "Item " + itemNumber + " of " + itemsCount + ": " + skill + " (" + typeDescription + " with the term " + parent + ")\n"
-				+ "Answer: approve <justification> or reject <justification>";
+		String itemPrompt = JbSupportSkillFixHierarchyMessages.itemPrompt.getMessage(language, parameters);
+		return itemPrompt;
 	}
 
 	/**
@@ -141,21 +125,14 @@ final class JbSupportSkillFixHierarchyConversation {
 		VisBusinessSkillFixHierarchyReview.INSTANCE.execute(review);
 
 		JnLanguage language = getLanguage(json);
-		String approvedSkills = getSkillsWithTheDecision(decisions, VisSkillFixHierarchyDecisions.approved);
-		String rejectedSkills = getSkillsWithTheDecision(decisions, VisSkillFixHierarchyDecisions.rejected);
-		String email = json.getAsString(VisEntitySkillFixHierarchyPending.Fields.email);
-		String parent = json.getAsString(VisEntitySkillFixHierarchyPending.Fields.parent);
+		String approvedSkills = getSkillsWithTheDecision(decisions, VisSkillFixHierarchyDecisions.approved, language);
+		String rejectedSkills = getSkillsWithTheDecision(decisions, VisSkillFixHierarchyDecisions.rejected, language);
 
-		boolean portuguese = isPortuguese(language);
-		String summary = portuguese
-				? "Revisão concluída para " + email + " / " + parent + ".\n"
-						+ "Aprovados: " + approvedSkills + "\n"
-						+ "Reprovados: " + rejectedSkills + "\n"
-						+ "O usuário será avisado por e-mail."
-				: "Review finished for " + email + " / " + parent + ".\n"
-						+ "Approved: " + approvedSkills + "\n"
-						+ "Rejected: " + rejectedSkills + "\n"
-						+ "The user will be notified by email.";
+		CcpJsonRepresentation parameters = requestKey
+				.put(JbSupportSkillFixHierarchyMessageFields.approvedSkills, approvedSkills)
+				.put(JbSupportSkillFixHierarchyMessageFields.rejectedSkills, rejectedSkills);
+
+		String summary = JbSupportSkillFixHierarchyMessages.reviewFinished.getMessage(language, parameters);
 
 		CcpJsonRepresentation jsonWithDecisions = json.put(VisSkillFixHierarchyReviewFields.reviewDecisions, decisions);
 		CcpJsonRepresentation jsonWithSummary = jsonWithDecisions.put(JbSupportSkillFixHierarchyFields.botReply, summary);
@@ -163,14 +140,26 @@ final class JbSupportSkillFixHierarchyConversation {
 		return finished;
 	}
 
-	private static String getSkillsWithTheDecision(List<CcpJsonRepresentation> decisions, VisSkillFixHierarchyDecisions decision) {
+	/**
+	 * Joins with commas the skills with the decision, or returns the text for none.
+	 * @param decisions the decisions
+	 * @param decision the decision
+	 * @param language the language
+	 * @return the skills
+	 */
+	private static String getSkillsWithTheDecision(List<CcpJsonRepresentation> decisions, VisSkillFixHierarchyDecisions decision, JnLanguage language) {
 		String decisionName = decision.name();
 		Stream<CcpJsonRepresentation> decisionsStream = decisions.stream();
 		Stream<CcpJsonRepresentation> withTheDecisionStream = decisionsStream.filter(item -> decisionName.equals(item.getAsString(VisSkillFixHierarchyReviewFields.decision)));
 		Stream<String> skillsStream = withTheDecisionStream.map(item -> item.getAsString(VisEntitySkillFixHierarchyItemPending.Fields.skill));
 		String skills = skillsStream.collect(Collectors.joining(", "));
 		boolean noSkill = skills.isEmpty();
-		String skillsOrDash = noSkill ? "-" : skills;
-		return skillsOrDash;
+
+		if(noSkill) {
+			String noSkillText = JbSupportSkillFixHierarchyMessages.noSkill.getMessage(language);
+			return noSkillText;
+		}
+
+		return skills;
 	}
 }

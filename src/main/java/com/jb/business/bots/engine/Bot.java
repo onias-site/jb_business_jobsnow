@@ -25,13 +25,28 @@ import com.jn.utils.JnLanguage;
 
 import com.ccp.json.fields.validation.CcpJsonCommonsFields;
 
+/**
+ * A bot of the platform, loaded from the database: its explanations by language, its commands (the configured ones plus
+ * the default ones) and, for a restricted bot, the chat ids allowed to use it. It receives each message, loads or starts
+ * the session of the chat and runs the step of the command.
+ */
 class Bot implements JbBotBusiness{
+	/** The type of the bot. */
 	private final JbBotType botType;
+	/** Whether only the allowed users may use the bot. */
 	private final boolean isRestricted;
+	/** The names of the commands of the bot. */
 	private final List<String> commands;
+	/** The chat ids allowed to use a restricted bot. */
 	private final Set<Long> allowedUsers;
+	/** The explanations of the bot, by language. */
 	private final List<CcpJsonRepresentation> explanations;
 
+	/**
+	 * Loads the bot from the result of the search of the bot entities.
+	 * @param botType the type of the bot
+	 * @param resultFromSearchBots the search result
+	 */
 	Bot(JbBotType botType, CcpSelectUnionAll resultFromSearchBots) {
 		String botTypeName = botType.name();
 		this.explanations = this.loadLabelsWithLanguages(botTypeName, resultFromSearchBots, JbEntityBotExplanation.ENTITY, JnJsonInstantMessengerFields.botName, JnJsonCommonsFields.language, JnJsonInstantMessengerFields.message);
@@ -42,6 +57,12 @@ class Bot implements JbBotBusiness{
 		
 	}
 	
+	/**
+	 * Reads the allowed chat ids (stored as text, possibly in scientific notation).
+	 * @param valueOf the type of the bot
+	 * @param resultFromSearchBots the search result
+	 * @return the allowed chat ids
+	 */
 	private Set<Long> loadAllowedUsers(JbBotType valueOf, CcpSelectUnionAll resultFromSearchBots) {
 
 		Supplier<CcpJsonRepresentation> parameterToSearchBot = valueOf.getParameterToSearchBot();
@@ -53,6 +74,12 @@ class Bot implements JbBotBusiness{
 		return collect;
 	}
 
+	/**
+	 * Reads the configured commands and adds the default ones.
+	 * @param valueOf the type of the bot
+	 * @param resultFromSearchBots the search result
+	 * @return the command names
+	 */
 	private List<String> loadCommands(JbBotType valueOf, CcpSelectUnionAll resultFromSearchBots){
 		Supplier<CcpJsonRepresentation> jsonSupplier = valueOf.getParameterToSearchBot();
 		CcpJsonRepresentation recordFromUnionAll = JbEntityBot.ENTITY.getRecordFromUnionAll(resultFromSearchBots, jsonSupplier);
@@ -66,12 +93,22 @@ class Bot implements JbBotBusiness{
 		return commands;
 	}
 	
+	/**
+	 * Returns the name of the bot.
+	 * @return the name
+	 */
 	public String toString() {
 		String name = this.name();
 		return name;
 	}
 	
 	
+	/**
+	 * Sends the message of the current step in the language of the session, when there is one.
+	 * @param json the session
+	 * @param messages the messages of the steps, by language
+	 * @return the result of the sending, or the session when there is no message
+	 */
 	CcpJsonRepresentation sendMessage(CcpJsonRepresentation json, List<CcpJsonRepresentation> messages) {
 		
 		String language = json.getAsString(JnJsonCommonsFields.language);
@@ -100,6 +137,12 @@ class Bot implements JbBotBusiness{
 		
 	}
 
+	/**
+	 * Sends one message, with the bot token, as the message type it names ({@code text} by default).
+	 * @param json the session
+	 * @param message the message
+	 * @return the session merged with the answer of the provider
+	 */
 	protected CcpJsonRepresentation sendMessage(CcpJsonRepresentation json, CcpJsonRepresentation message) {
 		String type = message.getOrDefault(JnJsonInstantMessengerFields.instantMessageType, () -> JnInstantMessageType.text.name());
 		
@@ -109,6 +152,13 @@ class Bot implements JbBotBusiness{
 		return sendMessage;
 	}
 	
+	/**
+	 * Loads the session of the chat. Typing a command starts it over (a priority command returns at once); otherwise the
+	 * session saved in the database is read, or a new one is created. What the user has just typed, the reply id and the
+	 * chat id prevail over the saved session.
+	 * @param json the message
+	 * @return the session
+	 */
 	public CcpJsonRepresentation loadSession(CcpJsonRepresentation json) {
 		
 		Collection<BotCommand> allCommands = JbBotEngine.INSTANCE.allCommands.values();
@@ -163,6 +213,11 @@ class Bot implements JbBotBusiness{
 		return sessionWithWhatWasJustTyped;
 	}
 
+	/**
+	 * Tells whether the user may use the bot.
+	 * @param json the message
+	 * @return {@code true} for an open bot or an allowed user
+	 */
 	public boolean isVisible(CcpJsonRepresentation json) {
 		
 		boolean openBot = false == this.isRestricted;
@@ -176,6 +231,12 @@ class Bot implements JbBotBusiness{
 		return alloedUser;
 	}
 	
+	/**
+	 * Builds the producer of a new session: the typed text, Portuguese as the language and the command name when there is
+	 * no session.
+	 * @param json the message
+	 * @return the producer
+	 */
 	private CcpBusiness newSessionProducer(CcpJsonRepresentation json) {
 		CcpBusiness newSessionProducer = jsn -> 
 		json
@@ -187,12 +248,17 @@ class Bot implements JbBotBusiness{
 		return newSessionProducer;
 	}
 
+	/**
+	 * Handles a message: loads the session, runs the step of the command and follows a redirection the step asked for.
+	 * @param message the message received
+	 * @return the result of the step
+	 */
 	public CcpJsonRepresentation apply(CcpJsonRepresentation message) {
 		String botTypeName2 = botType.name();
 		CcpJsonRepresentation put = message
 				.put(JnJsonInstantMessengerFields.botName, botTypeName2);
 				CcpJsonRepresentation put2 = put
-				//LATER PARAMETRIZAR ESSE TEXT
+				//LATER PARAMETERIZE THIS TEXT
 				.put(JnJsonInstantMessengerFields.instantMessageType, JnInstantMessageType.text);
 				CcpJsonRepresentation json = put2
 				.renameField(JbBotEngine.Fields.message_id, CcpJsonCommonsFields.replyTo)
@@ -202,20 +268,65 @@ class Bot implements JbBotBusiness{
 		CcpJsonRepresentation loadSession = this.loadSession(renameField);
 		BotCommand botCommand = this.getCommand(loadSession);
 		CcpJsonRepresentation execute = botCommand.execute(loadSession);
-		return execute;
+		CcpJsonRepresentation redirected = this.redirect(message, execute);
+		return redirected;
 	}
 
+	/**
+	 * When the step left a text in {@link JbBotEngineFields#typedValueToRedirect}, the bot handles it next, as if
+	 * the operator had typed it in the same message: choosing a ticket in the {@code /pendingTickets} list starts
+	 * the command of the ticket, and finishing that command shows the list again. The session of the step that
+	 * redirected has already ended, so the text starts its command from the beginning. The
+	 * {@link JbBotEngineFields#ticketFromTheList} flag goes along only when the step asked for it. A redirection to
+	 * the very text just handled is ignored, so that a step cannot put the bot in a loop.
+	 */
+	private CcpJsonRepresentation redirect(CcpJsonRepresentation message, CcpJsonRepresentation result) {
+
+		String typedValueToRedirect = result.getAsString(JbBotEngineFields.typedValueToRedirect);
+		String typedValue = message.getAsString(JnJsonInstantMessengerFields.message);
+		boolean nothingToRedirect = typedValueToRedirect.isEmpty() || typedValueToRedirect.equals(typedValue);
+
+		if(nothingToRedirect) {
+			return result;
+		}
+
+		CcpJsonRepresentation messageWithoutTheFlag = message.removeFields(JbBotEngineFields.ticketFromTheList);
+		CcpJsonRepresentation redirectedMessage = messageWithoutTheFlag.put(JnJsonInstantMessengerFields.message, typedValueToRedirect);
+		boolean ticketFromTheList = result.getAsBoolean(JbBotEngineFields.ticketFromTheList);
+
+		if(ticketFromTheList) {
+			redirectedMessage = redirectedMessage.put(JbBotEngineFields.ticketFromTheList, true);
+		}
+
+		CcpJsonRepresentation redirectedResult = this.execute(redirectedMessage);
+		return redirectedResult;
+	}
+
+	/**
+	 * Returns the command named in the session.
+	 * @param json the session
+	 * @return the command, or {@code null} when unknown
+	 */
 	protected BotCommand getCommand(CcpJsonRepresentation json) {
 		String commandName = json.getAsString(JnJsonInstantMessengerFields.commandName);
 		BotCommand botCommand = JbBotEngine.INSTANCE.allCommands.get(commandName);
 		return botCommand;
 	} 
 	
+	/**
+	 * Returns the name of the bot.
+	 * @return the name of the bot type
+	 */
 	public String name() {
 		String botTypeName3 = this.botType.name();
 		return botTypeName3;
 	}
 	
+	/**
+	 * Tells whether the bot has an explanation in the language of the session.
+	 * @param json the session
+	 * @return {@code true} when there is one
+	 */
 	public boolean hasExplanation(CcpJsonRepresentation json) {
 		String language = json.getAsString(JnJsonCommonsFields.language);
 		Stream<CcpJsonRepresentation> stream4 = this.explanations.stream();
@@ -229,6 +340,12 @@ class Bot implements JbBotBusiness{
 		return response;
 	}
 
+	/**
+	 * Returns the explanation of the bot in the language of the session.
+	 * @param json the session
+	 * @return the explanation
+	 * @throws JbErrorBotExplanationLanguageIsMissing when there is none in the language
+	 */
 	public String getExplanation(CcpJsonRepresentation json) {
 		String language = json.getAsString(JnJsonCommonsFields.language);
 		Stream<CcpJsonRepresentation> stream5 = this.explanations.stream();
@@ -245,6 +362,11 @@ class Bot implements JbBotBusiness{
 		return response;
 	}
 	
+	/**
+	 * Returns the commands of the bot.
+	 * @param json the session
+	 * @return the commands
+	 */
 	List<JbBotBusiness> getAllCommands(CcpJsonRepresentation json){
 		Stream<String> stream6 = this.commands.stream();
 		var stream6Map = stream6.map(x -> this.getCommand(x));
@@ -252,6 +374,12 @@ class Bot implements JbBotBusiness{
 		return collect;
 	}
 	
+	/**
+	 * Returns a command by its name.
+	 * @param commandName the name
+	 * @return the command
+	 * @throws JbErrorBotCommandNotFound when it is not registered
+	 */
 	protected JbBotBusiness getCommand(String commandName) {
 		Collection<BotCommand> allCommandsValues = JbBotEngine.INSTANCE.allCommands.values();
 		Stream<BotCommand> stream7 = allCommandsValues.stream();
@@ -269,29 +397,25 @@ class Bot implements JbBotBusiness{
 		return botCommand;
 	}
 
-	/**
-	 * Exceção lançada quando o bot não possui explicação cadastrada no idioma pedido.
-	 */
+	/** Raised when the bot has no explanation in the requested language. */
 	@SuppressWarnings("serial")
 	public static class JbErrorBotExplanationLanguageIsMissing extends RuntimeException {
 		/**
-		 * Monta a mensagem informando qual idioma falta e em qual bot.
-		 * @param language o idioma sem explicação cadastrada
-		 * @param botName o nome do bot consultado
+		 * Names the missing language and the bot.
+		 * @param language the language without an explanation
+		 * @param botName the bot
 		 */
 		private JbErrorBotExplanationLanguageIsMissing(String language, String botName) {
 			super("'" + language + "' is missing in the explanations of the bot '" + botName + "'");
 		}
 	}
 
-	/**
-	 * Exceção lançada quando se pede ao motor de bots um comando que não está registrado.
-	 */
+	/** Raised when a command that is not registered is requested from the bot engine. */
 	@SuppressWarnings("serial")
 	public static class JbErrorBotCommandNotFound extends RuntimeException {
 		/**
-		 * Monta a mensagem informando qual comando não foi encontrado.
-		 * @param commandName o nome do comando procurado
+		 * Names the command not found.
+		 * @param commandName the command
 		 */
 		private JbErrorBotCommandNotFound(String commandName) {
 			super("The command '" + commandName + "' whas not found");

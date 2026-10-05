@@ -21,24 +21,37 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
 import com.jn.utils.JnLanguage;
 
+/**
+ * The explanation of a bot in a language, sent by {@code explainThisBot}.
+ * <p>
+ * Configuration:
+ * <ul>
+ * <li>index {@code jb_bot_explanation}</li>
+ * <li>records cached for 3600 seconds</li>
+ * </ul>
+ */
 @CcpEntityCache(3600)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotExplanation.Fields.class)
-/**
- * Entidade que armazena a descrição geral de um bot em cada idioma. Cache de 1 hora.
- * Dados iniciais inserem as explicações em português dos bots {@code support} e {@code user}.
- */
 public class JbEntityBotExplanation implements CcpEntityConfigurator {
 
+	/** The entity {@code jb_bot_explanation}, with every decorator of this configuration. */
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotExplanation.class).entityInstance;
 	
+	/**
+	 * The fields of the entity, with their validation rules (this enum is the class named by
+	 * {@code @CcpEntityFieldsValidator}).
+	 */
 	public static enum Fields implements CcpJsonFieldName{
+		/** The {@code botName} field: part of the primary key, validated as in {@code JnJsonInstantMessengerFields}. */
 		@CcpEntityFieldPrimaryKey
 		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		botName, 
+		/** The {@code language} field: part of the primary key, validated as in {@code JnJsonCommonsFields}. */
 		@CcpEntityFieldPrimaryKey
 		@CcpJsonCopyFieldValidationsFrom(JnJsonCommonsFields.class)
 		language,
+		/** The {@code message} field: required, validated as in {@code JnJsonInstantMessengerFields}. */
 		@CcpJsonFieldValidatorRequired
 		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		message, 
@@ -46,6 +59,10 @@ public class JbEntityBotExplanation implements CcpEntityConfigurator {
 		
 	}
 	
+	/**
+	 * Seeds the Portuguese explanations of the support and user bots.
+	 * @return the seed records
+	 */
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
 		CcpJsonRepresentation put = CcpOtherConstants.EMPTY_JSON
 		.put(JnJsonInstantMessengerFields.message, "Bot de rotinas administrativas que só podem ser acessadas por usuários cadastrados");

@@ -31,24 +31,37 @@ import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.vis.entities.VisEntitySkillFixHierarchyPending;
 
+/**
+ * A bot command and the names of its parameters, in the order the operator types them after the command.
+ * <p>
+ * Configuration:
+ * <ul>
+ * <li>index {@code jb_bot_command}</li>
+ * <li>records cached for 3600 seconds</li>
+ * <li>versionable: every write keeps the previous state in {@code jn_versionable}</li>
+ * </ul>
+ */
 @CcpEntityCache(3600)
 @CcpEntityCustomDecorators(value = {@CcpEntityCustomDecorator(value = JnEntityVersionableBuilder.class, priority = 2),@CcpEntityCustomDecorator(value = JnEntityVersionablePurgeBuilder.class, priority = 5),})
 @JnEntityVersionable(JnVersionableEntity.class)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommand.Fields.class)
-/**
- * Entidade que representa um comando de bot com seus parâmetros nomeados. Versionável e com
- * cache de 1 hora. Dados iniciais registram {@code solveLoginTokenTicket} sem parâmetros.
- */
 public class JbEntityBotCommand implements CcpEntityConfigurator {
 
+	/** The entity {@code jb_bot_command}, with every decorator of this configuration. */
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommand.class).entityInstance;
 	
+	/**
+	 * The fields of the entity, with their validation rules (this enum is the class named by
+	 * {@code @CcpEntityFieldsValidator}).
+	 */
 	public static enum Fields implements CcpJsonFieldName{
+		/** The {@code commandName} field: part of the primary key, validated as in {@code JnJsonInstantMessengerFields}. */
 		@CcpEntityFieldPrimaryKey
 		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		commandName, 
 		
+		/** The {@code parameterName} field: text, list. */
 		@CcpJsonFieldTypeString(allowsEmptyString = false)
 		@CcpJsonFieldValidatorArray
 		parameterName
@@ -56,6 +69,11 @@ public class JbEntityBotCommand implements CcpEntityConfigurator {
 		
 	}
 	
+	/**
+	 * Seeds the parameters of the support commands: {@code solveLoginTokenTicket <ticketType> <email>},
+	 * {@code fixSkillHierarchy <parent> <type> <email>} and {@code allowCommandToUser <command> <email>}.
+	 * @return the seed records
+	 */
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
 
 		String solveLoginTokenTicketName = JbSupportBotCommands.solveLoginTokenTicket.name();

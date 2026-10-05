@@ -27,33 +27,50 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
 import com.jn.utils.JnLanguage;
 
+/**
+ * The name of a bot command in a language: how the user types it.
+ * <p>
+ * Configuration:
+ * <ul>
+ * <li>index {@code jb_bot_command_name}</li>
+ * <li>records cached for 3600 seconds</li>
+ * <li>versionable: every write keeps the previous state in {@code jn_versionable}</li>
+ * </ul>
+ */
 @CcpEntityCache(3600)
 @CcpEntityCustomDecorators(value = {@CcpEntityCustomDecorator(value = JnEntityVersionableBuilder.class, priority = 2),@CcpEntityCustomDecorator(value = JnEntityVersionablePurgeBuilder.class, priority = 5),})
 @JnEntityVersionable(JnVersionableEntity.class)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandName.Fields.class)
-/**
- * Entidade que armazena o nome localizado de um comando de bot para cada idioma. Versionável
- * e com cache de 1 hora. O identificador textual do comando no chat é o valor de {@code message}
- * no idioma do usuário.
- */
 public class JbEntityBotCommandName implements CcpEntityConfigurator {
 
+	/** The entity {@code jb_bot_command_name}, with every decorator of this configuration. */
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommandName.class).entityInstance;
 	
+	/**
+	 * The fields of the entity, with their validation rules (this enum is the class named by
+	 * {@code @CcpEntityFieldsValidator}).
+	 */
 	public static enum Fields implements CcpJsonFieldName{
+		/** The {@code commandName} field: part of the primary key, validated as in {@code JnJsonInstantMessengerFields}. */
 		@CcpEntityFieldPrimaryKey
 		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		commandName, 
+		/** The {@code language} field: part of the primary key, validated as in {@code JnJsonCommonsFields}. */
 		@CcpEntityFieldPrimaryKey
 		@CcpJsonCopyFieldValidationsFrom(JnJsonCommonsFields.class)
 		language,
+		/** The {@code message} field: required, validated as in {@code JnJsonInstantMessengerFields}. */
 		@CcpJsonFieldValidatorRequired
 		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		message, 
 		;
 	}
 	
+	/**
+	 * Seeds the Portuguese name of {@code solveLoginTokenTicket}.
+	 * @return the seed records
+	 */
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
 		String solveLoginTokenTicketName = JbSupportBotCommands.solveLoginTokenTicket.name();
 		CcpJsonRepresentation put = CcpOtherConstants.EMPTY_JSON

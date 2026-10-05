@@ -5,22 +5,34 @@ import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.vis.business.skill.VisSkillFixHierarchyDecisions;
 
 /**
- * What the operator typed in answer to a step of the {@code fixSkillHierarchy} command: a decision
- * ({@code aprovar}/{@code approve} or {@code rejeitar}/{@code reprovar}/{@code reject}) followed by the
- * justification, {@code um a um}/{@code one by one} to decide item by item, {@code ignorar}/{@code ignore} to
- * ignore the user for the command, and {@code sim}/{@code yes} or {@code não}/{@code nao}/{@code no} to confirm it.
+ * What the operator typed in answer to a step of the {@code fixSkillHierarchy} command, in Portuguese or English: a
+ * decision (approve or reject, with the Portuguese verbs aprovar, rejeitar or reprovar) followed by the justification;
+ * one by one (um a um) to decide item by item; ignore (ignorar) to ignore the user for the command; and yes or no (sim,
+ * nao with or without the accent) to confirm it. Case is ignored.
  */
 final class JbSupportSkillFixHierarchyAnswer {
 
+	/** The kind of answer. */
 	final JbSupportSkillFixHierarchyAnswerType type;
 
+	/** The justification of a decision; empty otherwise. */
 	final String justification;
 
+	/**
+	 * Builds the answer.
+	 * @param type the kind of answer
+	 * @param justification the justification
+	 */
 	private JbSupportSkillFixHierarchyAnswer(JbSupportSkillFixHierarchyAnswerType type, String justification) {
 		this.type = type;
 		this.justification = justification;
 	}
 
+	/**
+	 * Reads the answer from {@code typedValue}.
+	 * @param json the session
+	 * @return the answer ({@code notUnderstood} when it matches nothing)
+	 */
 	static JbSupportSkillFixHierarchyAnswer read(CcpJsonRepresentation json) {
 
 		String typedValue = json.getAsString(JnJsonCommonsFields.typedValue);
@@ -78,21 +90,37 @@ final class JbSupportSkillFixHierarchyAnswer {
 		return notUnderstood;
 	}
 
+	/**
+	 * Tells whether the operator chose to decide item by item.
+	 * @return {@code true} for one by one
+	 */
 	boolean isOneByOne() {
 		boolean oneByOne = JbSupportSkillFixHierarchyAnswerType.oneByOne == this.type;
 		return oneByOne;
 	}
 
+	/**
+	 * Tells whether the operator asked to ignore the user.
+	 * @return {@code true} for ignore
+	 */
 	boolean isIgnore() {
 		boolean ignore = JbSupportSkillFixHierarchyAnswerType.ignore == this.type;
 		return ignore;
 	}
 
+	/**
+	 * Tells whether the operator confirmed.
+	 * @return {@code true} for yes
+	 */
 	boolean isYes() {
 		boolean yes = JbSupportSkillFixHierarchyAnswerType.yes == this.type;
 		return yes;
 	}
 
+	/**
+	 * Tells whether the operator declined.
+	 * @return {@code true} for no
+	 */
 	boolean isNo() {
 		boolean no = JbSupportSkillFixHierarchyAnswerType.no == this.type;
 		return no;

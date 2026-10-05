@@ -9,9 +9,19 @@ import com.jb.entities.JbEntityBotCommandStepSession;
 
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
+/**
+ * Commands every bot has, besides the configured ones. Each one is also its own single step, and typing it always runs
+ * at once ({@link #hasPriority}).
+ */
 public enum JbDefaultBotCommandStep implements JbBotBusiness{
 	
+		/** Ends the session of the chat. */
 		removeSession{
+			/**
+			 * Deletes the session from the database and from memory.
+			 * @param json the session
+			 * @return the same JSON
+			 */
 			public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 				JbEntityBotCommandStepSession.ENTITY.delete(json);
 				BotCommand loadedCommand = this.getLoadedCommand(json);
@@ -19,15 +29,27 @@ public enum JbDefaultBotCommandStep implements JbBotBusiness{
 				return json;
 			}				
 		},
+		/** Answers with the chat id. */
 		chatId{
+			/**
+			 * Sends the chat id.
+			 * @param json the session
+			 * @return the result of the sending
+			 */
 			public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 				Long chatId = json.getAsLongNumber(JnJsonInstantMessengerFields.chatId);
-				String valorMais = "" + chatId;
-				json = super.sendMessage(json, valorMais);
+				String chatIdText = "" + chatId;
+				json = super.sendMessage(json, chatIdText);
 				return json;
 			}
 		},
+		/** Answers with the commands visible to the user. */
 		showAllCommands{
+			/**
+			 * Sends the identifiers of the visible commands, separated by commas.
+			 * @param json the session
+			 * @return the result of the sending
+			 */
 			public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 				
 				Bot bot = this.getBot(json);
@@ -57,7 +79,13 @@ public enum JbDefaultBotCommandStep implements JbBotBusiness{
 				return sendMessage;
 			}
 		},
+		/** Answers with the explanation of the bot. */
 		explainThisBot{
+			/**
+			 * Sends the explanation of the bot.
+			 * @param json the session
+			 * @return the result of the sending
+			 */
 			public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 				var bot = this.getBot(json);
 				String explanation = bot.getExplanation(json);
@@ -65,13 +93,24 @@ public enum JbDefaultBotCommandStep implements JbBotBusiness{
 				return sendMessage;
 			}
 			
+			/**
+			 * Visible when the bot has an explanation in the language of the session.
+			 * @param json the session
+			 * @return {@code true} when visible
+			 */
 			public boolean isVisible(CcpJsonRepresentation json) {
 				Bot bot = this.getBot(json);
 				boolean hasExplanation = bot.hasExplanation(json);
 				return hasExplanation;
 			}
 		},
+		/** Answers with the explanation of the current command. */
 		explainThisCommand{
+			/**
+			 * Visible when there is a current command with an explanation in the language of the session.
+			 * @param json the session
+			 * @return {@code true} when visible
+			 */
 			public boolean isVisible(CcpJsonRepresentation json) {
 				boolean containsAllFields = json.containsAllFields(JnJsonInstantMessengerFields.commandName);
 				boolean commandLess = false == containsAllFields;
@@ -84,6 +123,11 @@ public enum JbDefaultBotCommandStep implements JbBotBusiness{
 				return hasExplanation;
 			}
 
+			/**
+			 * Sends the explanation of the current command.
+			 * @param json the session
+			 * @return the result of the sending
+			 */
 			public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 				JbBotBusiness command = this.getLoadedCommand(json);
 				String explanation = command.getExplanation(json);
@@ -94,12 +138,22 @@ public enum JbDefaultBotCommandStep implements JbBotBusiness{
 		}
 	;
 	
+	/**
+	 * Builds the step of this command, with itself as the engine.
+	 * @param result the search result
+	 * @return the step
+	 */
 	BotCommandStep getBotCommandStep(CcpSelectUnionAll result) {
 		String name = this.name();
 		BotCommandStep response = new BotCommandStep(name, this, result);
 		return response;
 	}
 		
+	/**
+	 * A default command always runs at once.
+	 * @param json the session
+	 * @return {@code true}
+	 */
 	public boolean hasPriority(CcpJsonRepresentation json) {
 		return true;
 	}

@@ -28,26 +28,40 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
 import com.jn.utils.JnLanguage;
 
+/**
+ * The explanation of a bot command in a language, sent by {@code explainThisCommand} and when a step rejects an answer.
+ * <p>
+ * Configuration:
+ * <ul>
+ * <li>index {@code jb_bot_command_explanation}</li>
+ * <li>records cached for 3600 seconds</li>
+ * <li>versionable: every write keeps the previous state in {@code jn_versionable}</li>
+ * </ul>
+ */
 @CcpEntityCache(3600)
 @CcpEntityCustomDecorators(value = {@CcpEntityCustomDecorator(value = JnEntityVersionableBuilder.class, priority = 2),@CcpEntityCustomDecorator(value = JnEntityVersionablePurgeBuilder.class, priority = 5),})
 @JnEntityVersionable(JnVersionableEntity.class)
 @CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandExplanation.Fields.class)
-/**
- * Entidade que armazena a explicação de um comando de bot em um idioma específico. Versionável
- * e com cache de 1 hora. Usada pelo passo {@code explainThisCommand}.
- */
 public class JbEntityBotCommandExplanation implements CcpEntityConfigurator {
 
+	/** The entity {@code jb_bot_command_explanation}, with every decorator of this configuration. */
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommandExplanation.class).entityInstance;
 	
+	/**
+	 * The fields of the entity, with their validation rules (this enum is the class named by
+	 * {@code @CcpEntityFieldsValidator}).
+	 */
 	public static enum Fields implements CcpJsonFieldName{
+		/** The {@code commandName} field: part of the primary key, validated as in {@code JnJsonInstantMessengerFields}. */
 		@CcpEntityFieldPrimaryKey
 		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		commandName, 
+		/** The {@code language} field: part of the primary key, validated as in {@code JnJsonCommonsFields}. */
 		@CcpEntityFieldPrimaryKey
 		@CcpJsonCopyFieldValidationsFrom(JnJsonCommonsFields.class)
 		language,
+		/** The {@code message} field: required, validated as in {@code JnJsonInstantMessengerFields}. */
 		@CcpJsonFieldValidatorRequired
 		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
 		message, 
@@ -55,6 +69,10 @@ public class JbEntityBotCommandExplanation implements CcpEntityConfigurator {
 		
 	}
 	
+	/**
+	 * Seeds the Portuguese explanation of {@code solveLoginTokenTicket}.
+	 * @return the seed records
+	 */
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
 		String solveLoginTokenTicketName = JbSupportBotCommands.solveLoginTokenTicket.name();
 		CcpJsonRepresentation put = CcpOtherConstants.EMPTY_JSON

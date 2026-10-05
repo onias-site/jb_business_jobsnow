@@ -8,5 +8,6 @@ import com.ccp.decorators.CcpJsonFieldName;
  * the bot session already keeps, under that name, the command being run.
  */
 public enum JbSupportAllowCommandToUserFields implements CcpJsonFieldName{
+	/** The {@code command} field. */
 	command
 }

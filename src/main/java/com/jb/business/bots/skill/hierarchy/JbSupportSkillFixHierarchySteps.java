@@ -6,7 +6,10 @@ package com.jb.business.bots.skill.hierarchy;
  * will be ignored for the command.
  */
 public enum JbSupportSkillFixHierarchySteps {
+	/** Choosing how to decide the items. */
 	fixSkillHierarchyChooseMode,
+	/** Deciding the items one by one. */
 	fixSkillHierarchyDecideItem,
+	/** Confirming that the user will be ignored. */
 	fixSkillHierarchyConfirmIgnore
 }
