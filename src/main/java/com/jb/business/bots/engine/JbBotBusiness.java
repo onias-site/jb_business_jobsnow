@@ -62,16 +62,14 @@ interface JbBotBusiness extends CcpBusiness{
 	}
 	
 	/**
-	 * Reads the rows of the entity whose filter field has the given value (the language and message fields are not used).
+	 * Reads the rows of the entity whose filter field has the given value.
 	 * @param filterValue the value
 	 * @param resultFromSearchAllSteps the search result
 	 * @param entity the entity
 	 * @param filterField the filter field
-	 * @param languageField the language field (unused)
-	 * @param messageField the message field (unused)
 	 * @return the rows
 	 */
-	default List<CcpJsonRepresentation> loadLabelsWithLanguages(String filterValue, CcpSelectUnionAll resultFromSearchAllSteps, CcpEntity entity, CcpJsonFieldName filterField, CcpJsonFieldName languageField, CcpJsonFieldName messageField) {
+	default List<CcpJsonRepresentation> loadLabelsWithLanguages(String filterValue, CcpSelectUnionAll resultFromSearchAllSteps, CcpEntity entity, CcpJsonFieldName filterField) {
 		List<CcpJsonRepresentation> entityRows = resultFromSearchAllSteps.getEntityRows(entity);
 		Stream<CcpJsonRepresentation> stream = entityRows.stream();
 		var filter = stream.filter(x -> x.getAsString(filterField).equals(filterValue));

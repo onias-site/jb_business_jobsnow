@@ -1,6 +1,5 @@
 package com.jb.business.bots.skill.hierarchy;
 
-import com.jn.entities.JnEntitySystemMessage;
 import com.jn.messages.JnSystemMessage;
 
 /**
@@ -49,5 +48,20 @@ public enum JbSupportSkillFixHierarchyMessages implements JnSystemMessage {
 
 	/** Answer to the ignore confirmation that is neither yes nor no; asks the {@code {ignoreConfirmation}} again. */
 	ignoreConfirmationNotUnderstood,
+
+	/** Header of the request shown to the operator: {@code {typeDescription}}, {@code {email}} and {@code {parent}}. */
+	requestHeader,
+
+	/** Opens the part of one type of the request: {@code {typeDescription}} and the user's {@code {description}}. */
+	requestTypeJustification,
+
+	/** The items of the type still to be decided: {@code {skills}}. */
+	pendingItems,
+
+	/** The items of the type approved in an earlier review, which will not be asked: {@code {skills}}. */
+	approvedBefore,
+
+	/** The items of the type rejected in an earlier review, which will not be asked: {@code {skills}}. */
+	rejectedBefore,
 	;
 }

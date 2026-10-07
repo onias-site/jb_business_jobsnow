@@ -20,5 +20,7 @@ public enum JbSupportSkillFixHierarchyMessageFields implements CcpJsonFieldName{
 	/** The {@code options} field. */
 	options,
 	/** The {@code ignoreConfirmation} field. */
-	ignoreConfirmation
+	ignoreConfirmation,
+	/** The {@code skills} field: the skills of one part of the request, separated by commas. */
+	skills
 }

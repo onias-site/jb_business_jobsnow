@@ -7,6 +7,7 @@ import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.especifications.db.crud.CcpSelectUnionAll;
 import com.jb.entities.JbEntityBotCommandStepSession;
 
+import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
 /**
@@ -27,7 +28,17 @@ public enum JbDefaultBotCommandStep implements JbBotBusiness{
 				BotCommand loadedCommand = this.getLoadedCommand(json);
 				loadedCommand.removeSession(json);
 				return json;
-			}				
+			}
+
+			/**
+			 * Never listed nor typed: it is an inner step the engine runs at the end of a command. Until 2026-10-06
+			 * {@code /showAllCommands} listed it as a command.
+			 * @param json the session
+			 * @return {@code false}
+			 */
+			public boolean isVisible(CcpJsonRepresentation json) {
+				return false;
+			}
 		},
 		/** Answers with the chat id. */
 		chatId{
@@ -65,16 +76,9 @@ public enum JbDefaultBotCommandStep implements JbBotBusiness{
 					String identifier = command.getIdentifier(json);
 					collect.add(identifier);
 				}
-				String toString = collect
-						.toString();
-						String toStringReplace = toString
-						.replace("[", "");
-						String toStringReplaceReplace = toStringReplace
-						.replace("]", "");
-
-						String listedCommands = toStringReplaceReplace
-						.replace(",", ", ")
-						;
+				// until 2026-10-06 the list went through toString() and then had each "," replaced by ", ", which left
+				// two spaces between the commands
+				String listedCommands = String.join(", ", collect);
 				CcpJsonRepresentation sendMessage = super.sendMessage(json, listedCommands);
 				return sendMessage;
 			}
@@ -104,36 +108,75 @@ public enum JbDefaultBotCommandStep implements JbBotBusiness{
 				return hasExplanation;
 			}
 		},
-		/** Answers with the explanation of the current command. */
+		/**
+		 * Answers with the explanation of the command in progress in the chat. Until 2026-10-06 it could never run: the
+		 * message just typed carries no command, so it was invisible, and even when it ran the command of the session was
+		 * already itself; now the command in progress is read from the session saved in the database.
+		 */
 		explainThisCommand{
 			/**
-			 * Visible when there is a current command with an explanation in the language of the session.
-			 * @param json the session
+			 * Visible when the chat has a command in progress with an explanation in the language of its session.
+			 * @param json the message or the session
 			 * @return {@code true} when visible
 			 */
 			public boolean isVisible(CcpJsonRepresentation json) {
-				boolean containsAllFields = json.containsAllFields(JnJsonInstantMessengerFields.commandName);
-				boolean commandLess = false == containsAllFields;
-				if(commandLess) {
+				CcpJsonRepresentation commandInProgress = this.getCommandInProgress(json);
+				boolean noCommandInProgress = false == commandInProgress.containsAllFields(JnJsonInstantMessengerFields.commandName);
+				if(noCommandInProgress) {
 					return false;
 				}
-				
-				JbBotBusiness command = this.getLoadedCommand(json);
-				boolean hasExplanation = command.hasExplanation(json);
+
+				JbBotBusiness command = this.getLoadedCommand(commandInProgress);
+				boolean hasExplanation = command.hasExplanation(commandInProgress);
 				return hasExplanation;
 			}
 
 			/**
-			 * Sends the explanation of the current command.
+			 * Sends the explanation of the command in progress.
 			 * @param json the session
 			 * @return the result of the sending
 			 */
 			public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
-				JbBotBusiness command = this.getLoadedCommand(json);
-				String explanation = command.getExplanation(json);
-				
+				CcpJsonRepresentation commandInProgress = this.getCommandInProgress(json);
+				JbBotBusiness command = this.getLoadedCommand(commandInProgress);
+				String explanation = command.getExplanation(commandInProgress);
+
 				CcpJsonRepresentation sendMessage = super.sendMessage(json, explanation);
 				return sendMessage;
+			}
+
+			/**
+			 * Returns the JSON with the command in progress and the language of the chat: the one of the JSON when it
+			 * already names another command, otherwise the one of the session saved in the database (the JSON alone
+			 * when there is none).
+			 * @param json the message or the session
+			 * @return the JSON with the command in progress
+			 */
+			private CcpJsonRepresentation getCommandInProgress(CcpJsonRepresentation json) {
+				String commandName = json.getOrDefault(JnJsonInstantMessengerFields.commandName, () -> "");
+				boolean namesAnotherCommand = false == commandName.isEmpty() && false == this.name().equals(commandName);
+
+				if(namesAnotherCommand) {
+					return json;
+				}
+
+				// the key of the session is calculated over the chatId as a whole number: read as a double (as it comes
+				// from a parsed JSON) it would give another id
+				Long chatId = json.getAsLongNumber(JnJsonInstantMessengerFields.chatId);
+				CcpJsonRepresentation sessionKey = json
+						.getJsonPiece(JnJsonInstantMessengerFields.botName)
+						.put(JnJsonInstantMessengerFields.chatId, chatId);
+				boolean hasNoSavedSession = false == JbEntityBotCommandStepSession.ENTITY.exists(sessionKey);
+
+				if(hasNoSavedSession) {
+					CcpJsonRepresentation withoutCommand = json.removeFields(JnJsonInstantMessengerFields.commandName);
+					return withoutCommand;
+				}
+
+				CcpJsonRepresentation savedSession = JbEntityBotCommandStepSession.ENTITY.getOneById(sessionKey);
+				CcpJsonRepresentation sessionData = savedSession.getJsonPiece(JnJsonInstantMessengerFields.commandName, JnJsonCommonsFields.language);
+				CcpJsonRepresentation commandInProgress = json.mergeWithAnotherJson(sessionData);
+				return commandInProgress;
 			}
 		}
 	;

@@ -44,8 +44,8 @@ class BotCommand implements JbBotBusiness{
 	 */
 	BotCommand(String name, CcpSelectUnionAll result) {
 
-		this.explanations = this.loadLabelsWithLanguages(name, result, JbEntityBotCommandExplanation.ENTITY, JnJsonInstantMessengerFields.commandName, JnJsonCommonsFields.language, JnJsonInstantMessengerFields.message);
-		this.names = this.loadLabelsWithLanguages(name, result, JbEntityBotCommandName.ENTITY, JnJsonInstantMessengerFields.commandName, JnJsonCommonsFields.language, JnJsonInstantMessengerFields.message);
+		this.explanations = this.loadLabelsWithLanguages(name, result, JbEntityBotCommandExplanation.ENTITY, JnJsonInstantMessengerFields.commandName);
+		this.names = this.loadLabelsWithLanguages(name, result, JbEntityBotCommandName.ENTITY, JnJsonInstantMessengerFields.commandName);
 		this.parameterNames = this.loadParameterNames(name, result);
 		this.name = name;
 	}
@@ -65,7 +65,9 @@ class BotCommand implements JbBotBusiness{
 	}
 
 	/**
-	 * Tells whether the first word typed is not this command (by its name in the language of the session).
+	 * Tells whether the first word typed is not this command. Both names are accepted: the canonical one ({@code /} plus
+	 * {@link #name}), which is the one the notices sent to the operators carry, and the name in the language of the
+	 * session ({@link #getIdentifier}), which is the one {@code /showAllCommands} lists.
 	 * @param json the session
 	 * @return {@code true} when the user did not type this command
 	 */
@@ -74,12 +76,15 @@ class BotCommand implements JbBotBusiness{
 		String[] split = typedValue.split(" ");
 		List<String> asList = Arrays.asList(split);
 		String first = asList.get(0);
-		String identifier = this.getIdentifier(json);
 		String firstTrim = first.trim();
+		String canonicalIdentifier = "/" + this.name;
+		String identifier = this.getIdentifier(json);
 		String identifierTrim = identifier.trim();
-		boolean firstTrimEquals = firstTrim.equals(identifierTrim);
+		boolean typedTheCanonicalName = firstTrim.equals(canonicalIdentifier);
+		boolean typedTheNameOfTheLanguage = firstTrim.equals(identifierTrim);
+		boolean commandNameMatches = typedTheCanonicalName || typedTheNameOfTheLanguage;
 
-		boolean commandNameDoesNotMatch = false == firstTrimEquals;
+		boolean commandNameDoesNotMatch = false == commandNameMatches;
 		return commandNameDoesNotMatch;
 	}
 
@@ -200,7 +205,8 @@ class BotCommand implements JbBotBusiness{
 	}
 
 	/**
-	 * Returns the explanation in the language of the session (see finding: it returns the language, not the text).
+	 * Returns the explanation in the language of the session. Until 2026-10-06 it returned the language itself (the
+	 * {@code language} field instead of {@code message}), so {@code /explainThisCommand} answered "portuguese".
 	 * @param json the session
 	 * @return the explanation, or an empty text
 	 */
@@ -209,7 +215,7 @@ class BotCommand implements JbBotBusiness{
 		Stream<CcpJsonRepresentation> stream2 = this.explanations.stream();
 		var filter2 = stream2.filter(x -> x.getAsString(JnJsonCommonsFields.language).equals(language));
 		var filter2Map = filter2
-		.map(x -> x.getAsString(JnJsonCommonsFields.language));
+		.map(x -> x.getAsString(JnJsonInstantMessengerFields.message));
 		Optional<String> findFirst = filter2Map
 		.findFirst();
 		
@@ -218,17 +224,19 @@ class BotCommand implements JbBotBusiness{
 	} 
 
 	/**
-	 * Returns how the command is typed in the language of the session: {@code /} plus its name.
+	 * Returns how the command is typed in the language of the session: {@code /} plus its name in that language, or the
+	 * canonical name when it has none. Until 2026-10-06 it read the canonical name ({@code commandName}) instead of the
+	 * name of the language ({@code message}).
 	 * @param json the session
 	 * @return the identifier
 	 */
 	public String getIdentifier(CcpJsonRepresentation json) {
-		
+
 		String language = json.getAsString(JnJsonCommonsFields.language);
 		Stream<CcpJsonRepresentation> stream3 = this.names.stream();
 		var filter3 = stream3.filter(x -> x.getAsString(JnJsonCommonsFields.language).equals(language));
 		var filter3Map = filter3
-		.map(x -> "/" + x.getAsString(JnJsonInstantMessengerFields.commandName));
+		.map(x -> "/" + x.getAsString(JnJsonInstantMessengerFields.message));
 		var findFirst2 = filter3Map
 		.findFirst();
 
@@ -276,12 +284,13 @@ class BotCommand implements JbBotBusiness{
 	}
 	
 	/**
-	 * Removes the session of the chat from memory, only when it is the given one (see finding).
+	 * Removes the session of the chat from memory. Until 2026-10-06 it removed only when the kept JSON was equal to the
+	 * given one ({@code remove(key, value)}), which almost never happened, so the sessions stayed in memory.
 	 * @param json the session
 	 */
 	void removeSession(CcpJsonRepresentation json) {
 		Long chatId = json.getAsLongNumber(JnJsonInstantMessengerFields.chatId);
-		this.sessions.remove(chatId, json);
+		this.sessions.remove(chatId);
 	}
 
 	/**

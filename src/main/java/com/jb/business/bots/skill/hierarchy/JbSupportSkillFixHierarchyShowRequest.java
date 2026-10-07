@@ -173,7 +173,8 @@ public class JbSupportSkillFixHierarchyShowRequest implements CcpBusiness {
 
 	/**
 	 * Builds the text of the request: a header, then for each type the justification of the user, the pending items and the
-	 * items decided before, and finally the options (see finding: the texts are literals, not system messages).
+	 * items decided before, and finally the options. The texts come from {@link JbSupportSkillFixHierarchyMessages}
+	 * (seeded by {@code JbEntityBot}); until 2026-10-06 they were Portuguese and English literals here.
 	 * @param json the session
 	 * @param foundRequests the pending requests
 	 * @param reviewItems the items to review
@@ -183,16 +184,14 @@ public class JbSupportSkillFixHierarchyShowRequest implements CcpBusiness {
 	private String getRequestText(CcpJsonRepresentation json, List<CcpJsonRepresentation> foundRequests, List<CcpJsonRepresentation> reviewItems, List<CcpJsonRepresentation> previousDecisions) {
 
 		JnLanguage language = JbSupportSkillFixHierarchyConversation.getLanguage(json);
-		boolean portuguese = JbSupportSkillFixHierarchyConversation.isPortuguese(language);
-		String email = json.getAsString(VisEntitySkillFixHierarchyPending.Fields.email);
-		String parent = json.getAsString(VisEntitySkillFixHierarchyPending.Fields.parent);
 		VisSkillFixHierarchyTypes requestType = json.getAsEnum(VisEntitySkillFixHierarchyPending.Fields.type, VisSkillFixHierarchyTypes.class);
 		String requestTypeDescription = requestType.getDescription(language);
 
 		StringBuilder requestText = new StringBuilder();
-		String header = portuguese
-				? "Solicitação de " + requestTypeDescription + " de " + email + " para o termo " + parent + "\n\n"
-				: "Request of " + requestTypeDescription + " from " + email + " for the term " + parent + "\n\n";
+		CcpJsonRepresentation headerParameters = json
+				.getJsonPiece(VisEntitySkillFixHierarchyPending.Fields.email, VisEntitySkillFixHierarchyPending.Fields.parent)
+				.put(JbSupportSkillFixHierarchyMessageFields.typeDescription, requestTypeDescription);
+		String header = JbSupportSkillFixHierarchyMessages.requestHeader.getMessage(language, headerParameters);
 		requestText.append(header);
 
 		for (CcpJsonRepresentation request : foundRequests) {
@@ -214,32 +213,24 @@ public class JbSupportSkillFixHierarchyShowRequest implements CcpBusiness {
 				continue;
 			}
 
-			String typeText = portuguese
-					? "[" + typeDescription + "]\nJustificativa do usuário: " + description + "\n"
-					: "[" + typeDescription + "]\nUser's justification: " + description + "\n";
+			CcpJsonRepresentation typeParameters = CcpOtherConstants.EMPTY_JSON
+					.put(JbSupportSkillFixHierarchyMessageFields.typeDescription, typeDescription)
+					.put(VisEntitySkillFixHierarchyPending.Fields.description, description);
+			String typeText = JbSupportSkillFixHierarchyMessages.requestTypeJustification.getMessage(language, typeParameters);
 			requestText.append(typeText);
 
 			if(hasPendingSkill) {
-				String joinedSkills = String.join(", ", pendingSkills);
-				String pendingText = portuguese
-						? "Itens pendentes: " + joinedSkills + "\n"
-						: "Pending items: " + joinedSkills + "\n";
+				String pendingText = this.getSkillsText(JbSupportSkillFixHierarchyMessages.pendingItems, language, pendingSkills);
 				requestText.append(pendingText);
 			}
 
 			if(hasApprovedBefore) {
-				String joinedApprovedBefore = String.join(", ", approvedBeforeSkills);
-				String approvedBeforeText = portuguese
-						? "Já aprovados anteriormente (não serão perguntados): " + joinedApprovedBefore + "\n"
-						: "Already approved before (will not be asked): " + joinedApprovedBefore + "\n";
+				String approvedBeforeText = this.getSkillsText(JbSupportSkillFixHierarchyMessages.approvedBefore, language, approvedBeforeSkills);
 				requestText.append(approvedBeforeText);
 			}
 
 			if(hasRejectedBefore) {
-				String joinedRejectedBefore = String.join(", ", rejectedBeforeSkills);
-				String rejectedBeforeText = portuguese
-						? "Já reprovados anteriormente (não serão perguntados): " + joinedRejectedBefore + "\n"
-						: "Already rejected before (will not be asked): " + joinedRejectedBefore + "\n";
+				String rejectedBeforeText = this.getSkillsText(JbSupportSkillFixHierarchyMessages.rejectedBefore, language, rejectedBeforeSkills);
 				requestText.append(rejectedBeforeText);
 			}
 
@@ -249,6 +240,20 @@ public class JbSupportSkillFixHierarchyShowRequest implements CcpBusiness {
 		String options = JbSupportSkillFixHierarchyConversation.getOptions(language);
 		requestText.append(options);
 		String text = requestText.toString();
+		return text;
+	}
+
+	/**
+	 * Fills the message of one part of the request with its skills, separated by commas.
+	 * @param message the message of the part
+	 * @param language the language of the operator
+	 * @param skills the skills of the part
+	 * @return the text of the part
+	 */
+	private String getSkillsText(JbSupportSkillFixHierarchyMessages message, JnLanguage language, List<String> skills) {
+		String joinedSkills = String.join(", ", skills);
+		CcpJsonRepresentation parameters = CcpOtherConstants.EMPTY_JSON.put(JbSupportSkillFixHierarchyMessageFields.skills, joinedSkills);
+		String text = message.getMessage(language, parameters);
 		return text;
 	}
 

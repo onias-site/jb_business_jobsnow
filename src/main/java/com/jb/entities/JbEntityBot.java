@@ -24,17 +24,17 @@ import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.login.token.JbSupportLoginTokenTypes;
 import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsMessages;
 import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchyMessages;
-import com.jn.entities.JnEntitySystemMessage;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.jn.messages.JnSystemMessage;
 import com.jn.utils.JnLanguage;
+import com.vis.business.skill.VisSkillFixHierarchyDecisions;
 import com.vis.json.fields.validation.VisSkillFixHierarchyTypes;
 
 import java.util.stream.Stream;
 
 /**
- * A bot of the platform and the names of its commands, by language. Read once by {@code JbBotEngine} when it starts.
+ * A bot of the platform and the names of its  commands, by language. Read once by {@code JbBotEngine} when it starts.
  * <p>
  * Configuration:
  * <ul>
@@ -107,14 +107,18 @@ public class JbEntityBot implements CcpEntityConfigurator {
 
 	/**
 	 * Texts of the support bot conversations, one {@link JnEntitySystemMessage} record per item and language: the
-	 * descriptions of {@link VisSkillFixHierarchyTypes} and the texts of {@link JbSupportSkillFixHierarchyMessages}
-	 * (each {@code {field}} of a template is filled when the text is read).
+	 * descriptions of {@link VisSkillFixHierarchyTypes}, the group titles of {@link VisSkillFixHierarchyDecisions}
+	 * and the texts of {@link JbSupportSkillFixHierarchyMessages} (each {@code {field}} of a template is filled when
+	 * the text is read).
 	 */
 	private List<CcpBulkItem> getSystemMessages() {
 		List<CcpBulkItem> systemMessages = new ArrayList<>();
 
 		this.addSystemMessage(systemMessages, VisSkillFixHierarchyTypes.add, "associação", "association");
 		this.addSystemMessage(systemMessages, VisSkillFixHierarchyTypes.remove, "desassociação", "dissociation");
+
+		this.addSystemMessage(systemMessages, VisSkillFixHierarchyDecisions.approved, "Itens aprovados", "Approved items");
+		this.addSystemMessage(systemMessages, VisSkillFixHierarchyDecisions.rejected, "Itens reprovados", "Rejected items");
 
 		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.options
 				, "Responda com uma das opções:\n"
@@ -177,6 +181,26 @@ public class JbEntityBot implements CcpEntityConfigurator {
 		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.ignoreConfirmationNotUnderstood
 				, "Não entendi a resposta.\n\n{ignoreConfirmation}"
 				, "I did not understand the answer.\n\n{ignoreConfirmation}");
+
+		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.requestHeader
+				, "Solicitação de {typeDescription} de {email} para o termo {parent}\n\n"
+				, "Request of {typeDescription} from {email} for the term {parent}\n\n");
+
+		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.requestTypeJustification
+				, "[{typeDescription}]\nJustificativa do usuário: {description}\n"
+				, "[{typeDescription}]\nUser's justification: {description}\n");
+
+		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.pendingItems
+				, "Itens pendentes: {skills}\n"
+				, "Pending items: {skills}\n");
+
+		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.approvedBefore
+				, "Já aprovados anteriormente (não serão perguntados): {skills}\n"
+				, "Already approved before (will not be asked): {skills}\n");
+
+		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.rejectedBefore
+				, "Já reprovados anteriormente (não serão perguntados): {skills}\n"
+				, "Already rejected before (will not be asked): {skills}\n");
 
 		List<CcpBulkItem> pendingTicketsMessages = this.getPendingTicketsMessages();
 		systemMessages.addAll(pendingTicketsMessages);

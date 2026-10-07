@@ -91,7 +91,7 @@ class BotCommandStep implements JbBotBusiness{
 		this.endMessages = result.getEntityRows(JbEntityBotCommandStepEndMessage.ENTITY);
 		this.nextStep = loadFieldValue(name, result, JbEntityBotCommandStep.Fields.nextStep);
 		this.startMessages = result.getEntityRows(JbEntityBotCommandStepStartMessage.ENTITY);
-		this.explanations = this.loadLabelsWithLanguages(name, result, JbEntityBotCommandStepExplanation.ENTITY, JnJsonInstantMessengerFields.stepName, JnJsonCommonsFields.language, JnJsonInstantMessengerFields.message);
+		this.explanations = this.loadLabelsWithLanguages(name, result, JbEntityBotCommandStepExplanation.ENTITY, JnJsonInstantMessengerFields.stepName);
 	}
 
 	/**

@@ -21,7 +21,7 @@ import com.jb.entities.JbEntityBotExplanation;
 import com.jn.business.messages.JnInstantMessageType;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
-import com.jn.utils.JnLanguage;
+import com.jn.utils.JnSystemProperties;
 
 import com.ccp.json.fields.validation.CcpJsonCommonsFields;
 
@@ -49,7 +49,7 @@ class Bot implements JbBotBusiness{
 	 */
 	Bot(JbBotType botType, CcpSelectUnionAll resultFromSearchBots) {
 		String botTypeName = botType.name();
-		this.explanations = this.loadLabelsWithLanguages(botTypeName, resultFromSearchBots, JbEntityBotExplanation.ENTITY, JnJsonInstantMessengerFields.botName, JnJsonCommonsFields.language, JnJsonInstantMessengerFields.message);
+		this.explanations = this.loadLabelsWithLanguages(botTypeName, resultFromSearchBots, JbEntityBotExplanation.ENTITY, JnJsonInstantMessengerFields.botName);
 		this.allowedUsers = this.loadAllowedUsers(botType, resultFromSearchBots);
 		this.commands = this.loadCommands(botType, resultFromSearchBots);
 		this.isRestricted = botType.isRestricted();
@@ -232,17 +232,18 @@ class Bot implements JbBotBusiness{
 	}
 	
 	/**
-	 * Builds the producer of a new session: the typed text, Portuguese as the language and the command name when there is
-	 * no session.
+	 * Builds the producer of a new session: the typed text, the language configured for the system ({@code supportLanguage},
+	 * fixed as Portuguese until 2026-10-06) and the command name when there is no session.
 	 * @param json the message
 	 * @return the producer
 	 */
 	private CcpBusiness newSessionProducer(CcpJsonRepresentation json) {
-		CcpBusiness newSessionProducer = jsn -> 
+		String systemLanguage = JnSystemProperties.INSTANCE.supportLanguage();
+		CcpBusiness newSessionProducer = jsn ->
 		json
 		.mergeWithAnotherJson(json)
 		.renameField(JnJsonInstantMessengerFields.message, JnJsonCommonsFields.typedValue)
-		.put(JnJsonCommonsFields.language, JnLanguage.portuguese)
+		.put(JnJsonCommonsFields.language, systemLanguage)
 		.getTransformedJson(JsonProducers.putCommandNameWhenHasNoSession)
 		;
 		return newSessionProducer;

@@ -1,6 +1,5 @@
 package com.jb.business.bots.pending.tickets;
 
-import com.jn.entities.JnEntitySystemMessage;
 import com.jn.messages.JnSystemMessage;
 
 /**
