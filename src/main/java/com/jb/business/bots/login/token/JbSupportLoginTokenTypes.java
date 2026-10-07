@@ -20,6 +20,7 @@ import com.jn.entities.JnEntityLoginTokenRequestUnlock;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.utils.JnLanguage;
+import com.jn.utils.JnSystemProperties;
 
 /**
  * The types of login token tickets: each one names the notice sent to the support team when the ticket is opened and
@@ -83,7 +84,30 @@ public enum JbSupportLoginTokenTypes implements CcpBusiness{
 
 		this.entity.delete(withTheTokenToTheSupport);
 
-		return withTheTokenToTheSupport;
+		// the token was saved, and its e-mail sent, in the language of the user; the bot answers the support in its own
+		CcpJsonRepresentation withTheLanguageOfTheConversation = this.withTheLanguageOf(json, withTheTokenToTheSupport);
+
+		return withTheLanguageOfTheConversation;
+	}
+
+	/**
+	 * Puts back the language of the conversation with the support, which the reset replaced by the language of the user:
+	 * the answers of the bot to the support team exist in the language of the conversation only.
+	 * @param conversation the session as it arrived
+	 * @param result the result of the command
+	 * @return the result in the language of the conversation (the language of the system when the conversation had none,
+	 * as the bot engine does for a new session)
+	 */
+	private CcpJsonRepresentation withTheLanguageOf(CcpJsonRepresentation conversation, CcpJsonRepresentation result) {
+		boolean conversationHasNoLanguage = false == conversation.containsField(JnJsonCommonsFields.language);
+		if(conversationHasNoLanguage) {
+			String systemLanguage = JnSystemProperties.INSTANCE.supportLanguage();
+			CcpJsonRepresentation withTheSystemLanguage = result.put(JnJsonCommonsFields.language, systemLanguage);
+			return withTheSystemLanguage;
+		}
+		String conversationLanguage = conversation.getAsString(JnJsonCommonsFields.language);
+		CcpJsonRepresentation withTheLanguageOfTheConversation = result.put(JnJsonCommonsFields.language, conversationLanguage);
+		return withTheLanguageOfTheConversation;
 	}
 	/**
 	 * Seeds the template of the notice to the support team: the {@code solveLoginTokenTicket} command of this type for the
