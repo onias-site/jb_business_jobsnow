@@ -21,7 +21,6 @@ import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityField
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorArray;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
-import com.jb.business.bots.command.allowed.JbSupportAllowCommandToUserFields;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.login.token.JbSupportLoginToken;
 import com.jn.entities.decorators.builders.JnEntityVersionableBuilder;
@@ -30,6 +29,7 @@ import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.vis.entities.VisEntitySkillFixHierarchyPending;
+import com.vis.entities.VisEntitySkillPending;
 
 /**
  * A bot command and the names of its parameters, in the order the operator types them after the command.
@@ -71,7 +71,8 @@ public class JbEntityBotCommand implements CcpEntityConfigurator {
 	
 	/**
 	 * Seeds the parameters of the support commands: {@code solveLoginTokenTicket <ticketType> <email>},
-	 * {@code fixSkillHierarchy <parent> <type> <email>} and {@code allowCommandToUser <command> <email>}.
+	 * {@code fixSkillHierarchy <type> <email> <parent>}, {@code allowCommandToUser <email>} and
+	 * {@code reviewSkillSuggestion <email> <skill>}.
 	 * @return the seed records
 	 */
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
@@ -84,20 +85,29 @@ public class JbEntityBotCommand implements CcpEntityConfigurator {
 		
 		String fixSkillHierarchyName = JbSupportBotCommands.fixSkillHierarchy.name();
 		CcpJsonRepresentation fixSkillHierarchyWithName = CcpOtherConstants.EMPTY_JSON.put(JnJsonInstantMessengerFields.commandName, fixSkillHierarchyName);
-		// /fixSkillHierarchy <parent> <type> <email>: the operator reviews one type (add or remove) at a time
-		List<?> fixSkillHierarchyParameters = Arrays.asList(VisEntitySkillFixHierarchyPending.Fields.parent.name(), VisEntitySkillFixHierarchyPending.Fields.type.name(), VisEntitySkillFixHierarchyPending.Fields.email.name());
+		// /fixSkillHierarchy <type> <email> <parent>: the operator reviews one type (add or remove) at a time; the parent goes
+		// last because it may have spaces (until 2026-10-08 it went first and FRONT END was read as parent FRONT, type END)
+		List<?> fixSkillHierarchyParameters = Arrays.asList(VisEntitySkillFixHierarchyPending.Fields.type.name(), VisEntitySkillFixHierarchyPending.Fields.email.name(), VisEntitySkillFixHierarchyPending.Fields.parent.name());
 		CcpJsonRepresentation fixSkillHierarchy = fixSkillHierarchyWithName.put(JbEntityBotCommand.Fields.parameterName, fixSkillHierarchyParameters);
 
 		String allowCommandToUserName = JbSupportBotCommands.allowCommandToUser.name();
 		CcpJsonRepresentation allowCommandToUserWithName = CcpOtherConstants.EMPTY_JSON.put(JnJsonInstantMessengerFields.commandName, allowCommandToUserName);
-		List<?> allowCommandToUserParameters = Arrays.asList(JbSupportAllowCommandToUserFields.command.name(), JnJsonCommonsFields.email.name());
+		// /allowCommandToUser <email>: the ignoring is global, so the command is not a parameter (since 2026-10-08)
+		List<?> allowCommandToUserParameters = Arrays.asList(JnJsonCommonsFields.email.name());
 		CcpJsonRepresentation allowCommandToUser = allowCommandToUserWithName.put(JbEntityBotCommand.Fields.parameterName, allowCommandToUserParameters);
+
+		String reviewSkillSuggestionName = JbSupportBotCommands.reviewSkillSuggestion.name();
+		CcpJsonRepresentation reviewSkillSuggestionWithName = CcpOtherConstants.EMPTY_JSON.put(JnJsonInstantMessengerFields.commandName, reviewSkillSuggestionName);
+		// /reviewSkillSuggestion <email> <skill>: the skill goes last because it may have spaces (the last parameter takes the rest of the text)
+		List<?> reviewSkillSuggestionParameters = Arrays.asList(VisEntitySkillPending.Fields.email.name(), VisEntitySkillPending.Fields.skill.name());
+		CcpJsonRepresentation reviewSkillSuggestion = reviewSkillSuggestionWithName.put(JbEntityBotCommand.Fields.parameterName, reviewSkillSuggestionParameters);
 
 		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(
 				ENTITY
 				,data
 				,fixSkillHierarchy
 				,allowCommandToUser
+				,reviewSkillSuggestion
 				);
 		return createBulkItems;
 	}

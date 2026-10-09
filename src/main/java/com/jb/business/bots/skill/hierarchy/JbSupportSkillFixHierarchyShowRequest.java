@@ -24,10 +24,9 @@ import com.vis.entities.VisEntitySkillFixHierarchyItemApproved;
 import com.vis.entities.VisEntitySkillFixHierarchyItemPending;
 import com.vis.entities.VisEntitySkillFixHierarchyPending;
 import com.vis.json.fields.validation.VisSkillFixHierarchyTypes; 
-import com.vis.json.fields.validation.VisUserRequestCommands;
 
 /**
- * First step of the {@code fixSkillHierarchy} command ({@code /fixSkillHierarchy <parent> <type> <email>}): shows the
+ * First step of the {@code fixSkillHierarchy} command ({@code /fixSkillHierarchy <type> <email> <parent>}): shows the
  * operator the request of the user for that parent, with the justification the user gave ({@code description})
  * and the items still pending, and asks how to decide them. Only the request of the {@code type} given in the
  * command ({@code add} or {@code remove}) is shown: the user associates and dissociates through different
@@ -43,7 +42,7 @@ import com.vis.json.fields.validation.VisUserRequestCommands;
  * the review finishes right here ({@code reviewFinished}); without any item at all the flow is diverted with
  * {@code requestNotFound}.
  *
- * <p>A user ignored for the command ({@link VisEntityCommandNotAllowedToUser}) is not reviewed, even if the
+ * <p>A user ignored by the support (the ignoring is global, {@link VisEntityCommandNotAllowedToUser}) is not reviewed, even if the
  * operator runs the command for them by mistake or on purpose: the flow is diverted with {@code userNotAllowed}
  * before anything is read, and the operator is told how to stop ignoring the user.
  */
@@ -58,8 +57,7 @@ public class JbSupportSkillFixHierarchyShowRequest implements CcpBusiness {
 	public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
 
 		String email = json.getAsString(VisEntitySkillFixHierarchyPending.Fields.email);
-		CcpJsonRepresentation ignoredUserWithEmail = CcpOtherConstants.EMPTY_JSON.put(VisEntityCommandNotAllowedToUser.Fields.email, email);
-		CcpJsonRepresentation ignoredUser = ignoredUserWithEmail.put(VisEntityCommandNotAllowedToUser.Fields.commandName, VisUserRequestCommands.fixSkillHierarchy);
+		CcpJsonRepresentation ignoredUser = CcpOtherConstants.EMPTY_JSON.put(VisEntityCommandNotAllowedToUser.Fields.email, email);
 		boolean userIsIgnored = VisEntityCommandNotAllowedToUser.ENTITY.exists(ignoredUser);
 
 		if(userIsIgnored) {

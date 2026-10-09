@@ -20,11 +20,11 @@ import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityField
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
-import com.jb.business.bots.command.allowed.JbSupportAllowCommandToUserFields;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsSteps;
 import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchyFields;
 import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchySteps;
+import com.jb.business.bots.skill.suggestion.JbSupportSkillSuggestionSteps;
 import com.jn.business.messages.JnInstantMessageType;
 import com.jn.entities.decorators.annotations.JnEntityVersionable;
 import com.jn.entities.decorators.builders.JnEntityVersionableBuilder;
@@ -98,7 +98,7 @@ public class JbEntityBotCommandStepEndMessage implements CcpEntityConfigurator {
 	}
 
 	/**
-	 * The steps of the {@code fixSkillHierarchy} and {@code pendingTickets} commands end by sending the operator
+	 * The steps of the {@code fixSkillHierarchy}, {@code reviewSkillSuggestion} and {@code pendingTickets} commands end by sending the operator
 	 * the text their engine left in {@code botReply} (the request, the next item, the next ticket, and so on),
 	 * already written in the language of the session.
 	 */
@@ -109,6 +109,9 @@ public class JbEntityBotCommandStepEndMessage implements CcpEntityConfigurator {
 				JbSupportSkillFixHierarchySteps.fixSkillHierarchyChooseMode.name(),
 				JbSupportSkillFixHierarchySteps.fixSkillHierarchyDecideItem.name(),
 				JbSupportSkillFixHierarchySteps.fixSkillHierarchyConfirmIgnore.name(),
+				JbSupportBotCommands.reviewSkillSuggestion.name(),
+				JbSupportSkillSuggestionSteps.reviewSkillSuggestionDecide.name(),
+				JbSupportSkillSuggestionSteps.reviewSkillSuggestionConfirmIgnore.name(),
 				JbSupportBotCommands.pendingTickets.name(),
 				JbSupportPendingTicketsSteps.pendingTicketsChoose.name());
 		JnLanguage[] languages = JnLanguage.values();
@@ -132,17 +135,16 @@ public class JbEntityBotCommandStepEndMessage implements CcpEntityConfigurator {
 	}
 
 	/**
-	 * The {@code allowCommandToUser} command ends telling the operator that the requests of the user for the
+	 * The {@code allowCommandToUser} command ends telling the operator that the requests of the user, in every
 	 * command reach the support again.
 	 */
 	private List<CcpJsonRepresentation> getAllowCommandToUserEndMessages() {
 		String stepName = JbSupportBotCommands.allowCommandToUser.name();
 		String email = "{" + JnJsonCommonsFields.email + "}";
-		String command = "{" + JbSupportAllowCommandToUserFields.command + "}";
 
-		String portugueseMessage = "O usuário " + email + " não é mais ignorado no comando " + command + ": as próximas solicitações dele voltarão a chegar ao suporte.";
-		String englishMessage = "The user " + email + " is no longer ignored in the command " + command + ": their next requests will reach the support again.";
-		String spanishMessage = "El usuario " + email + " ya no es ignorado en el comando " + command + ": sus próximas solicitudes volverán a llegar al soporte.";
+		String portugueseMessage = "O usuário " + email + " não é mais ignorado pelo suporte: as próximas solicitações dele, em todos os comandos, voltarão a chegar ao suporte.";
+		String englishMessage = "The user " + email + " is no longer ignored by the support: their next requests, in every command, will reach the support again.";
+		String spanishMessage = "El usuario " + email + " ya no es ignorado por el soporte: sus próximas solicitudes, en todos los comandos, volverán a llegar al soporte.";
 
 		List<CcpJsonRepresentation> endMessages = new ArrayList<>();
 		endMessages.add(this.getEndMessage(stepName, JnLanguage.portuguese, portugueseMessage));

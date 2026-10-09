@@ -3,9 +3,11 @@ package com.jb.business.bots.pending.tickets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -19,6 +21,7 @@ import com.ccp.especifications.db.query.CcpQueryExecutorDecorator;
 import com.ccp.especifications.db.query.CcpQueryOptions;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
 import com.jb.entities.JbEntityPendingTickets;
+import com.jn.entities.JnEntitySupportCancelledCommand;
 import com.jn.entities.JnEntitySupportPendingCommand;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
@@ -30,7 +33,9 @@ import com.jn.utils.JnLanguage;
  * command.
  *
  * <p>Reading the list first moves the commands that reached the operator since the last reading from the inbox
- * written by the message sending ({@link JnEntitySupportPendingCommand}) to {@link JbEntityPendingTickets}. Both
+ * written by the message sending ({@link JnEntitySupportPendingCommand}) to {@link JbEntityPendingTickets}, and deletes
+ * the tickets whose commands were cancelled ({@link JnEntitySupportCancelledCommand}: the user gave up what the command
+ * was about). All of them
  * are found by a query, which Elasticsearch answers from what was refreshed up to a second ago, so each record
  * found is confirmed by its id, which is read in real time: without that, a ticket solved a moment ago would
  * still be listed, or would even come back from the inbox.
@@ -49,12 +54,15 @@ final class JbSupportPendingTicketsList {
 		Long chatId = json.getAsLongNumber(JnJsonInstantMessengerFields.chatId);
 
 		List<CcpJsonRepresentation> movedTickets = moveTheInbox(botName, chatId);
+		Set<String> cancelledCommands = applyTheCancellations(botName, chatId);
 		List<CcpJsonRepresentation> listedTickets = findExisting(JbEntityPendingTickets.ENTITY, botName, chatId, JbEntityPendingTickets.Fields.botName, JbEntityPendingTickets.Fields.chatId);
 
 		// a ticket just moved may not be in the query yet, and one sent twice is a single ticket
 		Map<String, CcpJsonRepresentation> ticketsByCommand = new LinkedHashMap<>();
 		Stream<CcpJsonRepresentation> allTicketsStream = Stream.concat(listedTickets.stream(), movedTickets.stream());
-		allTicketsStream.forEach(ticket -> ticketsByCommand.putIfAbsent(ticket.getAsString(JbEntityPendingTickets.Fields.ticket), ticket));
+		// the ones just moved are kept in memory, and a cancellation applied above does not reach them there
+		Stream<CcpJsonRepresentation> notCancelledTicketsStream = allTicketsStream.filter(ticket -> false == cancelledCommands.contains(ticket.getAsString(JbEntityPendingTickets.Fields.ticket)));
+		notCancelledTicketsStream.forEach(ticket -> ticketsByCommand.putIfAbsent(ticket.getAsString(JbEntityPendingTickets.Fields.ticket), ticket));
 
 		Collection<CcpJsonRepresentation> distinctTickets = ticketsByCommand.values();
 		Stream<CcpJsonRepresentation> ticketsStream = distinctTickets.stream();
@@ -92,6 +100,33 @@ final class JbSupportPendingTicketsList {
 		}
 
 		return movedTickets;
+	}
+
+	/**
+	 * Deletes the tickets of the operator whose commands were cancelled because the user gave up what they were about
+	 * ({@link JnEntitySupportCancelledCommand}, written by the cost center of the command), and then the cancellations.
+	 * @param botName the bot
+	 * @param chatId the chat of the operator
+	 * @return the commands cancelled
+	 */
+	private static Set<String> applyTheCancellations(String botName, Long chatId) {
+
+		List<CcpJsonRepresentation> cancellations = findExisting(JnEntitySupportCancelledCommand.ENTITY, botName, chatId, JnEntitySupportCancelledCommand.Fields.botName, JnEntitySupportCancelledCommand.Fields.chatId);
+		Set<String> cancelledCommands = new HashSet<>();
+
+		for (CcpJsonRepresentation cancellation : cancellations) {
+			String command = cancellation.getAsString(JnEntitySupportCancelledCommand.Fields.command);
+
+			CcpJsonRepresentation ticketWithBotName = CcpOtherConstants.EMPTY_JSON.put(JbEntityPendingTickets.Fields.botName, botName);
+			CcpJsonRepresentation ticketWithChatId = ticketWithBotName.put(JbEntityPendingTickets.Fields.chatId, chatId);
+			CcpJsonRepresentation ticket = ticketWithChatId.put(JbEntityPendingTickets.Fields.ticket, command);
+
+			JbEntityPendingTickets.ENTITY.delete(ticket);
+			JnEntitySupportCancelledCommand.ENTITY.delete(cancellation);
+			cancelledCommands.add(command);
+		}
+
+		return cancelledCommands;
 	}
 
 	/**

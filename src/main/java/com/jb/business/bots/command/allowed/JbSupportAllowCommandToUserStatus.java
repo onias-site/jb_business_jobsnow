@@ -4,10 +4,10 @@ import com.ccp.process.CcpProcessStatus;
 
 /**
  * Diversion of the {@code allowCommandToUser} command, mapped in its {@code stepFlow}: the user was not
- * ignored for the command ({@code userNotIgnored}), the session ends with a notice to the operator.
+ * ignored ({@code userNotIgnored}), the session ends with a notice to the operator.
  */
 public enum JbSupportAllowCommandToUserStatus implements CcpProcessStatus{
-	/** Status 404: the user was not ignored for the command. */
+	/** Status 404: the user was not ignored. */
 	userNotIgnored(404)
 	;
 

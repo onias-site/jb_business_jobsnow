@@ -8,15 +8,16 @@ import com.vis.business.skill.VisSkillFixHierarchyDecisions;
  * What the operator typed in answer to a step of the {@code fixSkillHierarchy} command, in Portuguese or English: a
  * decision (approve or reject, with the Portuguese verbs aprovar, rejeitar or reprovar) followed by the justification;
  * one by one (um a um) to decide item by item; ignore (ignorar) to ignore the user for the command; and yes or no (sim,
- * nao with or without the accent) to confirm it. Case is ignored.
+ * nao with or without the accent) to confirm it. Case is ignored. Also read by the {@code reviewSkillSuggestion}
+ * command, which takes the same decisions on a single skill.
  */
-final class JbSupportSkillFixHierarchyAnswer {
+public final class JbSupportSkillFixHierarchyAnswer {
 
 	/** The kind of answer. */
 	final JbSupportSkillFixHierarchyAnswerType type;
 
 	/** The justification of a decision; empty otherwise. */
-	final String justification;
+	public final String justification;
 
 	/**
 	 * Builds the answer.
@@ -33,7 +34,7 @@ final class JbSupportSkillFixHierarchyAnswer {
 	 * @param json the session
 	 * @return the answer ({@code notUnderstood} when it matches nothing)
 	 */
-	static JbSupportSkillFixHierarchyAnswer read(CcpJsonRepresentation json) {
+	public static JbSupportSkillFixHierarchyAnswer read(CcpJsonRepresentation json) {
 
 		String typedValue = json.getAsString(JnJsonCommonsFields.typedValue);
 		String answer = typedValue.trim();
@@ -94,7 +95,7 @@ final class JbSupportSkillFixHierarchyAnswer {
 	 * Tells whether the operator chose to decide item by item.
 	 * @return {@code true} for one by one
 	 */
-	boolean isOneByOne() {
+	public boolean isOneByOne() {
 		boolean oneByOne = JbSupportSkillFixHierarchyAnswerType.oneByOne == this.type;
 		return oneByOne;
 	}
@@ -103,7 +104,7 @@ final class JbSupportSkillFixHierarchyAnswer {
 	 * Tells whether the operator asked to ignore the user.
 	 * @return {@code true} for ignore
 	 */
-	boolean isIgnore() {
+	public boolean isIgnore() {
 		boolean ignore = JbSupportSkillFixHierarchyAnswerType.ignore == this.type;
 		return ignore;
 	}
@@ -112,7 +113,7 @@ final class JbSupportSkillFixHierarchyAnswer {
 	 * Tells whether the operator confirmed.
 	 * @return {@code true} for yes
 	 */
-	boolean isYes() {
+	public boolean isYes() {
 		boolean yes = JbSupportSkillFixHierarchyAnswerType.yes == this.type;
 		return yes;
 	}
@@ -121,7 +122,7 @@ final class JbSupportSkillFixHierarchyAnswer {
 	 * Tells whether the operator declined.
 	 * @return {@code true} for no
 	 */
-	boolean isNo() {
+	public boolean isNo() {
 		boolean no = JbSupportSkillFixHierarchyAnswerType.no == this.type;
 		return no;
 	}
@@ -129,11 +130,20 @@ final class JbSupportSkillFixHierarchyAnswer {
 	/**
 	 * A decision counts only with its justification: it goes to the user in the email.
 	 */
-	boolean isDecisionWithJustification() {
+	public boolean isDecisionWithJustification() {
 		boolean isDecision = JbSupportSkillFixHierarchyAnswerType.approve == this.type || JbSupportSkillFixHierarchyAnswerType.reject == this.type;
 		boolean hasJustification = false == this.justification.isEmpty();
 		boolean decisionWithJustification = isDecision && hasJustification;
 		return decisionWithJustification;
+	}
+
+	/**
+	 * Tells whether the operator approved (with or without justification).
+	 * @return {@code true} for an approval
+	 */
+	public boolean isApproval() {
+		boolean approval = JbSupportSkillFixHierarchyAnswerType.approve == this.type;
+		return approval;
 	}
 
 	/**

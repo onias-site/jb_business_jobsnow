@@ -24,6 +24,7 @@ import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.login.token.JbSupportLoginTokenTypes;
 import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsMessages;
 import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchyMessages;
+import com.jb.business.bots.skill.suggestion.JbSupportSkillSuggestionMessages;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.jn.messages.JnSystemMessage;
@@ -125,18 +126,18 @@ public class JbEntityBot implements CcpEntityConfigurator {
 				+ "• aprovar <justificativa> — aprova todos os itens pendentes\n"
 				+ "• rejeitar <justificativa> — rejeita todos os itens pendentes\n"
 				+ "• um a um — decide item por item\n"
-				+ "• ignorar — descarta a solicitação e ignora as próximas deste usuário neste comando"
+				+ "• ignorar — descarta a solicitação e ignora as próximas deste usuário em todos os comandos"
 				, "Answer with one of the options:\n"
 				+ "• approve <justification> — approves all the pending items\n"
 				+ "• reject <justification> — rejects all the pending items\n"
 				+ "• one by one — decides item by item\n"
-				+ "• ignore — discards the request and ignores the next ones of this user in this command");
+				+ "• ignore — discards the request and ignores the next ones of this user in every command");
 
 		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.ignoreConfirmation
-				, "Confirma que o usuário {email} será ignorado no comando fixSkillHierarchy? "
+				, "Confirma que o usuário {email} será ignorado pelo suporte, em todos os comandos? "
 				+ "Esta solicitação será descartada sem aviso ao usuário e as próximas não chegarão mais a você.\n"
 				+ "Responda: sim ou não"
-				, "Do you confirm that the user {email} will be ignored in the fixSkillHierarchy command? "
+				, "Do you confirm that the user {email} will be ignored by the support, in every command? "
 				+ "This request will be discarded without notifying the user and the next ones will no longer reach you.\n"
 				+ "Answer: yes or no");
 
@@ -171,8 +172,8 @@ public class JbEntityBot implements CcpEntityConfigurator {
 		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.noSkill, "-", "-");
 
 		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.userIgnored
-				, "O usuário {email} foi ignorado no comando fixSkillHierarchy. A solicitação para o termo {parent} foi descartada."
-				, "The user {email} was ignored in the fixSkillHierarchy command. The request for the term {parent} was discarded.");
+				, "O usuário {email} foi ignorado pelo suporte, em todos os comandos. A solicitação para o termo {parent} foi descartada."
+				, "The user {email} was ignored by the support, in every command. The request for the term {parent} was discarded.");
 
 		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.ignoreCanceled
 				, "O usuário não será ignorado.\n\n{options}"
@@ -204,6 +205,74 @@ public class JbEntityBot implements CcpEntityConfigurator {
 
 		List<CcpBulkItem> pendingTicketsMessages = this.getPendingTicketsMessages();
 		systemMessages.addAll(pendingTicketsMessages);
+
+		List<CcpBulkItem> skillSuggestionMessages = this.getSkillSuggestionMessages();
+		systemMessages.addAll(skillSuggestionMessages);
+
+		return systemMessages;
+	}
+
+	/**
+	 * Texts of the {@code reviewSkillSuggestion} command ({@link JbSupportSkillSuggestionMessages}).
+	 */
+	private List<CcpBulkItem> getSkillSuggestionMessages() {
+		List<CcpBulkItem> systemMessages = new ArrayList<>();
+
+		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.request
+				, "Sugestão de habilidade de {email}\n\n"
+				+ "Habilidade: {skill}\n"
+				+ "Sinônimos: {synonymNames}\n"
+				+ "Justificativa do usuário: {description}\n\n"
+				+ "{options}"
+				, "Skill suggestion from {email}\n\n"
+				+ "Skill: {skill}\n"
+				+ "Synonyms: {synonymNames}\n"
+				+ "User's justification: {description}\n\n"
+				+ "{options}");
+
+		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.options
+				, "Responda com uma das opções:\n"
+				+ "• aprovar <justificativa> — aprova a habilidade, que passa a ser reconhecida nos currículos\n"
+				+ "• rejeitar <justificativa> — rejeita a habilidade\n"
+				+ "• ignorar — descarta a sugestão e ignora as próximas deste usuário em todos os comandos\n"
+				+ "A justificativa vai para o usuário e precisa ter de 10 a 500 caracteres."
+				, "Answer with one of the options:\n"
+				+ "• approve <justification> — approves the skill, which starts being recognized in the resumes\n"
+				+ "• reject <justification> — rejects the skill\n"
+				+ "• ignore — discards the suggestion and ignores the next ones of this user in every command\n"
+				+ "The justification goes to the user and needs 10 to 500 characters.");
+
+		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.notUnderstood
+				, "Não entendi a resposta. Toda decisão precisa vir acompanhada de uma justificativa de 10 a 500 caracteres.\n\n{options}"
+				, "I did not understand the answer. Every decision needs to come with a justification of 10 to 500 characters.\n\n{options}");
+
+		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.approved
+				, "A habilidade {skill} sugerida por {email} foi aprovada. O usuário será avisado por e-mail."
+				, "The skill {skill} suggested by {email} was approved. The user will be notified by email.");
+
+		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.rejected
+				, "A habilidade {skill} sugerida por {email} foi rejeitada. O usuário será avisado por e-mail."
+				, "The skill {skill} suggested by {email} was rejected. The user will be notified by email.");
+
+		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.ignoreConfirmation
+				, "Confirma que o usuário {email} será ignorado pelo suporte, em todos os comandos? "
+				+ "Esta sugestão será descartada sem aviso ao usuário e as próximas não chegarão mais a você.\n"
+				+ "Responda: sim ou não"
+				, "Do you confirm that the user {email} will be ignored by the support, in every command? "
+				+ "This suggestion will be discarded without notifying the user and the next ones will no longer reach you.\n"
+				+ "Answer: yes or no");
+
+		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.ignoreConfirmationNotUnderstood
+				, "Não entendi a resposta.\n\n{ignoreConfirmation}"
+				, "I did not understand the answer.\n\n{ignoreConfirmation}");
+
+		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.ignoreCanceled
+				, "O usuário não será ignorado.\n\n{options}"
+				, "The user will not be ignored.\n\n{options}");
+
+		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.userIgnored
+				, "O usuário {email} foi ignorado pelo suporte, em todos os comandos. A sugestão da habilidade {skill} foi descartada."
+				, "The user {email} was ignored by the support, in every command. The suggestion of the skill {skill} was discarded.");
 
 		return systemMessages;
 	}

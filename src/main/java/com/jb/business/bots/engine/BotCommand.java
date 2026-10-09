@@ -132,7 +132,7 @@ class BotCommand implements JbBotBusiness{
 	
 	/**
 	 * When the command itself was typed, puts the pending ticket and the typed parameters (split by any whitespace) under
-	 * their names; the answer to a later step is left alone.
+	 * their names, the last one taking the rest of the text; the answer to a later step is left alone.
 	 * @param json the session
 	 * @return the session with the parameters
 	 */
@@ -156,6 +156,7 @@ class BotCommand implements JbBotBusiness{
 		List<String> parameterValues = asList.subList(1, size);
 		json = this.putPendingTicket(json, parameterValues);
 		int k = 0;
+		int lastParameterIndex = this.parameterNames.size() - 1;
 
 		for (String parameterName : this.parameterNames) {
 			int size2 = parameterValues.size();
@@ -163,7 +164,13 @@ class BotCommand implements JbBotBusiness{
 			if(noMoreParameterValues) {
 				break;
 			}
-			String parameterValue = parameterValues.get(k++);
+			// the last parameter takes the rest of the typed text, because its value may have spaces (a skill such as
+			// "REACT NATIVE" in /reviewSkillSuggestion <email> <skill>)
+			boolean isLastParameter = k == lastParameterIndex;
+			List<String> remainingValues = parameterValues.subList(k, size2);
+			String remainingText = String.join(" ", remainingValues);
+			String parameterValue = isLastParameter ? remainingText : parameterValues.get(k);
+			k++;
 			CcpFieldName ccpFieldName = new CcpFieldName(parameterName);
 			json = json.put(ccpFieldName, parameterValue);
 		}

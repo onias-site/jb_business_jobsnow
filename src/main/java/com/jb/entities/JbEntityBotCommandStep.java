@@ -26,7 +26,6 @@ import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
 import com.ccp.process.CcpProcessStatusDefault;
 import com.jb.business.bots.command.allowed.JbSupportAllowCommandToUser;
 import com.jb.business.bots.command.allowed.JbSupportAllowCommandToUserStatus;
-import com.jb.business.bots.command.allowed.JbSupportAllowCommandToUserFields;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.login.token.JbSupportLoginToken;
 import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsChoose;
@@ -48,7 +47,13 @@ import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.jn.utils.JnLanguage;
+import com.jb.business.bots.skill.suggestion.JbSupportSkillSuggestionConfirmIgnore;
+import com.jb.business.bots.skill.suggestion.JbSupportSkillSuggestionDecide;
+import com.jb.business.bots.skill.suggestion.JbSupportSkillSuggestionShowRequest;
+import com.jb.business.bots.skill.suggestion.JbSupportSkillSuggestionStatus;
+import com.jb.business.bots.skill.suggestion.JbSupportSkillSuggestionSteps;
 import com.vis.entities.VisEntitySkillFixHierarchyPending;
+import com.vis.entities.VisEntitySkillPending;
 
 /**
  * A step of a bot command: the business it runs ({@code engine}), the step that follows ({@code nextStep}) and, by status of a {@code CcpErrorFlowDisturb} thrown by the engine, the messages to send and the step to go to ({@code stepFlow}).
@@ -198,9 +203,88 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 				, this.getConfirmSkillFixHierarchyIgnoreStep()
 				, this.getAllowCommandToUserStep()
 				, this.getPendingTicketsStep()
-				, this.getChoosePendingTicketStep());
+				, this.getChoosePendingTicketStep()
+				, this.getShowSkillSuggestionStep()
+				, this.getDecideSkillSuggestionStep()
+				, this.getConfirmSkillSuggestionIgnoreStep());
 
 		return createBulkItems;
+	}
+
+	/**
+	 * {@code /reviewSkillSuggestion <email> <skill>}: shows the suggestion and goes on to the decision. Without a
+	 * pending suggestion the session ends with a notice to the operator; a user ignored for the command is not
+	 * reviewed, and the operator is told how to stop ignoring them.
+	 */
+	private CcpJsonRepresentation getShowSkillSuggestionStep() {
+		String commandName = JbSupportBotCommands.reviewSkillSuggestion.name();
+		String decide = JbSupportSkillSuggestionSteps.reviewSkillSuggestionDecide.name();
+		String email = "{" + VisEntitySkillPending.Fields.email + "}";
+		String skill = "{" + VisEntitySkillPending.Fields.skill + "}";
+
+		CcpJsonRepresentation portuguese = getStepFlowMessage(JnLanguage.portuguese, "Não há sugestão pendente da habilidade '" + skill + "' para o e-mail '" + email + "'");
+		CcpJsonRepresentation english = getStepFlowMessage(JnLanguage.english, "There is no pending suggestion of the skill '" + skill + "' for the e-mail '" + email + "'");
+		CcpJsonRepresentation spanish = getStepFlowMessage(JnLanguage.spanish, "No hay sugerencia pendiente de la habilidad '" + skill + "' para el correo '" + email + "'");
+		int requestNotFound = JbSupportSkillSuggestionStatus.requestNotFound.asNumber();
+		CcpJsonRepresentation requestNotFoundFlow = getStepFlow(requestNotFound, "", portuguese, english, spanish);
+
+		String allowCommandToUser = "/" + JbSupportBotCommands.allowCommandToUser + " " + email;
+		CcpJsonRepresentation portugueseNotAllowed = getStepFlowMessage(JnLanguage.portuguese, "O usuário " + email + " está sendo ignorado pelo suporte e as solicitações dele não são atendidas em nenhum comando. Para voltar a atendê-lo, use " + allowCommandToUser);
+		CcpJsonRepresentation englishNotAllowed = getStepFlowMessage(JnLanguage.english, "The user " + email + " is being ignored by the support and their requests are not reviewed in any command. To review them again, use " + allowCommandToUser);
+		CcpJsonRepresentation spanishNotAllowed = getStepFlowMessage(JnLanguage.spanish, "El usuario " + email + " está siendo ignorado por el soporte y sus solicitudes no se atienden en ningún comando. Para volver a atenderlo, use " + allowCommandToUser);
+		int userNotAllowed = JbSupportSkillSuggestionStatus.userNotAllowed.asNumber();
+		CcpJsonRepresentation userNotAllowedFlow = getStepFlow(userNotAllowed, "", portugueseNotAllowed, englishNotAllowed, spanishNotAllowed);
+
+		CcpJsonRepresentation step = getBotCommandStep(commandName, JbSupportSkillSuggestionShowRequest.class, decide, requestNotFoundFlow, userNotAllowedFlow);
+		return step;
+	}
+
+	/**
+	 * Approve or reject (finishing the review) or ignore the user (going on to its confirmation). An answer not
+	 * understood repeats this step; a suggestion withdrawn meanwhile ends the session.
+	 */
+	private CcpJsonRepresentation getDecideSkillSuggestionStep() {
+		String decide = JbSupportSkillSuggestionSteps.reviewSkillSuggestionDecide.name();
+		String confirmIgnore = JbSupportSkillSuggestionSteps.reviewSkillSuggestionConfirmIgnore.name();
+		CcpJsonRepresentation[] botReply = this.getBotReplyInEveryLanguage();
+		String email = "{" + VisEntitySkillPending.Fields.email + "}";
+		String skill = "{" + VisEntitySkillPending.Fields.skill + "}";
+
+		CcpJsonRepresentation portuguese = getStepFlowMessage(JnLanguage.portuguese, "A sugestão da habilidade '" + skill + "' do e-mail '" + email + "' não está mais pendente: o usuário desistiu dela.");
+		CcpJsonRepresentation english = getStepFlowMessage(JnLanguage.english, "The suggestion of the skill '" + skill + "' from the e-mail '" + email + "' is no longer pending: the user withdrew it.");
+		CcpJsonRepresentation spanish = getStepFlowMessage(JnLanguage.spanish, "La sugerencia de la habilidad '" + skill + "' del correo '" + email + "' ya no está pendiente: el usuario desistió de ella.");
+		int requestNotFound = JbSupportSkillSuggestionStatus.requestNotFound.asNumber();
+		CcpJsonRepresentation requestNotFoundFlow = getStepFlow(requestNotFound, "", portuguese, english, spanish);
+
+		int invalidAnswer = JbSupportSkillSuggestionStatus.invalidAnswer.asNumber();
+		int reviewFinished = JbSupportSkillSuggestionStatus.reviewFinished.asNumber();
+		int ignoreConfirmationAsked = JbSupportSkillSuggestionStatus.ignoreConfirmationAsked.asNumber();
+		CcpJsonRepresentation invalidAnswerFlow = getStepFlow(invalidAnswer, decide, botReply);
+		CcpJsonRepresentation reviewFinishedFlow = getStepFlow(reviewFinished, "", botReply);
+		CcpJsonRepresentation ignoreConfirmationAskedFlow = getStepFlow(ignoreConfirmationAsked, confirmIgnore, botReply);
+
+		CcpJsonRepresentation step = getBotCommandStep(decide, JbSupportSkillSuggestionDecide.class, "", invalidAnswerFlow, reviewFinishedFlow, ignoreConfirmationAskedFlow, requestNotFoundFlow);
+		return step;
+	}
+
+	/**
+	 * Confirmation of the intention to ignore the user: yes ends the session with the user ignored, no goes back to
+	 * the decision, and an answer not understood repeats this step.
+	 */
+	private CcpJsonRepresentation getConfirmSkillSuggestionIgnoreStep() {
+		String decide = JbSupportSkillSuggestionSteps.reviewSkillSuggestionDecide.name();
+		String confirmIgnore = JbSupportSkillSuggestionSteps.reviewSkillSuggestionConfirmIgnore.name();
+		CcpJsonRepresentation[] botReply = this.getBotReplyInEveryLanguage();
+
+		int invalidAnswer = JbSupportSkillSuggestionStatus.invalidAnswer.asNumber();
+		int userIgnored = JbSupportSkillSuggestionStatus.userIgnored.asNumber();
+		int ignoreCanceled = JbSupportSkillSuggestionStatus.ignoreCanceled.asNumber();
+		CcpJsonRepresentation invalidAnswerFlow = getStepFlow(invalidAnswer, confirmIgnore, botReply);
+		CcpJsonRepresentation userIgnoredFlow = getStepFlow(userIgnored, "", botReply);
+		CcpJsonRepresentation ignoreCanceledFlow = getStepFlow(ignoreCanceled, decide, botReply);
+
+		CcpJsonRepresentation step = getBotCommandStep(confirmIgnore, JbSupportSkillSuggestionConfirmIgnore.class, "", invalidAnswerFlow, userIgnoredFlow, ignoreCanceledFlow);
+		return step;
 	}
 
 	/**
@@ -217,7 +301,7 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 	}
 
 	/**
-	 * {@code /fixSkillHierarchy <parent> <type> <email>}: shows the request and goes on to the choice of how to decide
+	 * {@code /fixSkillHierarchy <type> <email> <parent>}: shows the request and goes on to the choice of how to decide
 	 * it. Without any item the session ends with a notice to the operator; when every item was decided in
 	 * earlier reviews, the review finishes right away with its summary; a user ignored for the command is not
 	 * reviewed, and the operator is told how to stop ignoring them.
@@ -239,10 +323,10 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 		int reviewFinished = JbSupportSkillFixHierarchyStatus.reviewFinished.asNumber();
 		CcpJsonRepresentation reviewFinishedFlow = getStepFlow(reviewFinished, "", botReply);
 
-		String allowCommandToUser = "/" + JbSupportBotCommands.allowCommandToUser + " " + commandName + " " + email;
-		CcpJsonRepresentation portugueseNotAllowed = getStepFlowMessage(JnLanguage.portuguese, "O usuário " + email + " está sendo ignorado no comando " + commandName + " e as solicitações dele não são atendidas. Para voltar a atendê-lo, use " + allowCommandToUser);
-		CcpJsonRepresentation englishNotAllowed = getStepFlowMessage(JnLanguage.english, "The user " + email + " is being ignored in the command " + commandName + " and their requests are not reviewed. To review them again, use " + allowCommandToUser);
-		CcpJsonRepresentation spanishNotAllowed = getStepFlowMessage(JnLanguage.spanish, "El usuario " + email + " está siendo ignorado en el comando " + commandName + " y sus solicitudes no se atienden. Para volver a atenderlo, use " + allowCommandToUser);
+		String allowCommandToUser = "/" + JbSupportBotCommands.allowCommandToUser + " " + email;
+		CcpJsonRepresentation portugueseNotAllowed = getStepFlowMessage(JnLanguage.portuguese, "O usuário " + email + " está sendo ignorado pelo suporte e as solicitações dele não são atendidas em nenhum comando. Para voltar a atendê-lo, use " + allowCommandToUser);
+		CcpJsonRepresentation englishNotAllowed = getStepFlowMessage(JnLanguage.english, "The user " + email + " is being ignored by the support and their requests are not reviewed in any command. To review them again, use " + allowCommandToUser);
+		CcpJsonRepresentation spanishNotAllowed = getStepFlowMessage(JnLanguage.spanish, "El usuario " + email + " está siendo ignorado por el soporte y sus solicitudes no se atienden en ningún comando. Para volver a atenderlo, use " + allowCommandToUser);
 		int userNotAllowed = JbSupportSkillFixHierarchyStatus.userNotAllowed.asNumber();
 		CcpJsonRepresentation userNotAllowedFlow = getStepFlow(userNotAllowed, "", portugueseNotAllowed, englishNotAllowed, spanishNotAllowed);
 
@@ -272,17 +356,16 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 	}
 
 	/**
-	 * {@code /allowCommandToUser <command> <email>}: the user stops being ignored for the command. When the user
+	 * {@code /allowCommandToUser <email>}: the user stops being ignored (in every command). When the user
 	 * was not ignored for it, the session ends with a notice to the operator.
 	 */
 	private CcpJsonRepresentation getAllowCommandToUserStep() {
 		String commandName = JbSupportBotCommands.allowCommandToUser.name();
 		String email = "{" + JnJsonCommonsFields.email + "}";
-		String command = "{" + JbSupportAllowCommandToUserFields.command + "}";
 
-		CcpJsonRepresentation portuguese = getStepFlowMessage(JnLanguage.portuguese, "O usuário " + email + " não está sendo ignorado no comando " + command);
-		CcpJsonRepresentation english = getStepFlowMessage(JnLanguage.english, "The user " + email + " is not being ignored in the command " + command);
-		CcpJsonRepresentation spanish = getStepFlowMessage(JnLanguage.spanish, "El usuario " + email + " no está siendo ignorado en el comando " + command);
+		CcpJsonRepresentation portuguese = getStepFlowMessage(JnLanguage.portuguese, "O usuário " + email + " não está sendo ignorado pelo suporte");
+		CcpJsonRepresentation english = getStepFlowMessage(JnLanguage.english, "The user " + email + " is not being ignored by the support");
+		CcpJsonRepresentation spanish = getStepFlowMessage(JnLanguage.spanish, "El usuario " + email + " no está siendo ignorado por el soporte");
 		int userNotIgnored = JbSupportAllowCommandToUserStatus.userNotIgnored.asNumber();
 		CcpJsonRepresentation userNotIgnoredFlow = getStepFlow(userNotIgnored, "", portuguese, english, spanish);
 
