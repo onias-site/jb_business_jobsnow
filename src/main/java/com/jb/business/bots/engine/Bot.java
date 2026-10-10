@@ -162,10 +162,14 @@ class Bot implements JbBotBusiness{
 	public CcpJsonRepresentation loadSession(CcpJsonRepresentation json) {
 		
 		Collection<BotCommand> allCommands = JbBotEngine.INSTANCE.allCommands.values();
-		
+		// the message carries no language, and without one only the canonical name of a command would be recognized:
+		// typed in the middle of another command, the name in the language (/sair) would be read as the answer to the step
+		String chatLanguage = BotChatLanguage.getChatLanguage(json);
+		CcpJsonRepresentation jsonWithLanguage = json.put(JnJsonCommonsFields.language, chatLanguage);
+
 		for (BotCommand command : allCommands) {
-			
-			boolean commandNameDoesNotMatch = command.commandNameDoesNotMatch(json);
+
+			boolean commandNameDoesNotMatch = command.commandNameDoesNotMatch(jsonWithLanguage);
 			
 			if(commandNameDoesNotMatch) {
 				continue;
@@ -181,7 +185,7 @@ class Bot implements JbBotBusiness{
 			boolean hasPriority = command.hasPriority(json);
 			
 			if(hasPriority) {
-				CcpJsonRepresentation priorityCommand = command.getCommandJson(json);
+				CcpJsonRepresentation priorityCommand = command.getCommandJson(jsonWithLanguage);
 				return priorityCommand;
 			}
 			// typing the command itself starts it over: a session left in the middle of a multi-step command (in
@@ -196,7 +200,7 @@ class Bot implements JbBotBusiness{
 
 		CcpEntityMetaData entityMetaData = JbEntityBotCommandStepSession.ENTITY.getEntityMetaData();
 		
-		CcpBusiness newSessionProducer = this.newSessionProducer(json);
+		CcpBusiness newSessionProducer = this.newSessionProducer(json, chatLanguage);
 		
 		CcpJsonRepresentation savedSession = entityMetaData.getOneByIdOrHandleItIfThisIdWasNotFound(json, newSessionProducer);
 		CcpJsonRepresentation innerJson = savedSession.getInnerJson(JnJsonCommonsFields.json);
@@ -232,18 +236,19 @@ class Bot implements JbBotBusiness{
 	}
 	
 	/**
-	 * Builds the producer of a new session: the typed text, the language configured for the system ({@code supportLanguage},
-	 * fixed as Portuguese until 2026-10-06) and the command name when there is no session.
+	 * Builds the producer of a new session: the typed text, the language of the chat (the one chosen with
+	 * {@code /setLanguage}, or {@code supportLanguage} while there is no choice; until 2026-10-10 always
+	 * {@code supportLanguage}) and the command name when there is no session.
 	 * @param json the message
+	 * @param chatLanguage the language of the chat
 	 * @return the producer
 	 */
-	private CcpBusiness newSessionProducer(CcpJsonRepresentation json) {
-		String systemLanguage = JnSystemProperties.INSTANCE.supportLanguage();
+	private CcpBusiness newSessionProducer(CcpJsonRepresentation json, String chatLanguage) {
 		CcpBusiness newSessionProducer = jsn ->
 		json
 		.mergeWithAnotherJson(json)
 		.renameField(JnJsonInstantMessengerFields.message, JnJsonCommonsFields.typedValue)
-		.put(JnJsonCommonsFields.language, systemLanguage)
+		.put(JnJsonCommonsFields.language, chatLanguage)
 		.getTransformedJson(JsonProducers.putCommandNameWhenHasNoSession)
 		;
 		return newSessionProducer;

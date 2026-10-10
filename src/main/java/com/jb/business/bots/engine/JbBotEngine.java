@@ -109,6 +109,20 @@ public class JbBotEngine {
 					list.add(parameterToSearchCommandsAndFirstSteps);
 				}
 		}
+
+		// the default commands may have a name in the language too (exit is typed /sair in Portuguese); without
+		// searching them here, they would be known only by their canonical name
+		JbDefaultBotCommandStep[] defaultCommands = JbDefaultBotCommandStep.values();
+
+		for (JbDefaultBotCommandStep defaultCommand : defaultCommands) {
+			String defaultCommandName = defaultCommand.name();
+			for (var language : languages) {
+				CcpJsonRepresentation parameterToSearchTheDefaultCommand = CcpOtherConstants.EMPTY_JSON
+						.putSameValueInManyFields(defaultCommandName, JnJsonInstantMessengerFields.stepName, JnJsonInstantMessengerFields.commandName)
+						.put(JnJsonCommonsFields.language, language);
+				list.add(parameterToSearchTheDefaultCommand);
+			}
+		}
 		int listSize = list.size();
 
 		

@@ -60,7 +60,7 @@ public class JbEntityBotExplanation implements CcpEntityConfigurator {
 	}
 	
 	/**
-	 * Seeds the Portuguese explanations of the support and user bots.
+	 * Seeds the Portuguese and English explanations of the support and user bots.
 	 * @return the seed records
 	 */
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
@@ -85,10 +85,22 @@ public class JbEntityBotExplanation implements CcpEntityConfigurator {
 		;
 		
 		
+		String englishName = JnLanguage.english.name();
+		CcpJsonRepresentation supportInEnglish = CcpOtherConstants.EMPTY_JSON
+				.put(JnJsonInstantMessengerFields.message, "Bot of administrative routines that only registered users can access")
+				.put(JnJsonCommonsFields.language, englishName)
+				.put(JnJsonInstantMessengerFields.botName, supportName);
+		CcpJsonRepresentation userInEnglish = CcpOtherConstants.EMPTY_JSON
+				.put(JnJsonInstantMessengerFields.message, "Bot of public routines that every user can access")
+				.put(JnJsonCommonsFields.language, englishName)
+				.put(JnJsonInstantMessengerFields.botName, userName);
+
 		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(
 				ENTITY
 				,support
 				,user
+				,supportInEnglish
+				,userInEnglish
 				);
 		return createBulkItems;
 	}

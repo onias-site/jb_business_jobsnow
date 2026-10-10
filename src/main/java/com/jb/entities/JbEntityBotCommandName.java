@@ -2,6 +2,7 @@ package com.jb.entities;
 
 import com.jn.entities.decorators.annotations.JnEntityVersionable;
 import com.jn.entities.decorators.engine.JnVersionableEntity;
+import java.util.ArrayList;
 import java.util.List;
 import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpJsonRepresentation;
@@ -18,7 +19,8 @@ import com.ccp.especifications.db.utils.entity.decorators.interfaces.CcpEntityCo
 import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityFieldPrimaryKey;
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
-import com.jb.business.bots.engine.JbSupportBotCommands;
+import com.jb.business.bots.engine.JbCommandNamesInPortuguese;
+
 import com.jn.entities.decorators.builders.JnEntityVersionableBuilder;
 import com.jn.entities.decorators.builders.JnEntityVersionablePurgeBuilder;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
@@ -68,26 +70,28 @@ public class JbEntityBotCommandName implements CcpEntityConfigurator {
 	}
 	
 	/**
-	 * Seeds the Portuguese name of {@code solveLoginTokenTicket}.
+	 * Seeds the Portuguese name of every command of the bots ({@link JbCommandNamesInPortuguese}), the configured ones
+	 * and the default ones. In English the commands keep the canonical name, which needs no record. Until 2026-10-10
+	 * only {@code solveLoginTokenTicket} had a Portuguese name, so {@code /showAllCommands} listed the others in English.
 	 * @return the seed records
 	 */
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
-		String solveLoginTokenTicketName = JbSupportBotCommands.solveLoginTokenTicket.name();
-		CcpJsonRepresentation put = CcpOtherConstants.EMPTY_JSON
-		.put(JnJsonInstantMessengerFields.commandName, solveLoginTokenTicketName);
-		CcpJsonRepresentation put2 = put
-		.put(JnJsonInstantMessengerFields.message, "solucionarTicketsDeTokenDeLogin");
+		JbCommandNamesInPortuguese[] commandNames = JbCommandNamesInPortuguese.values();
 		String portugueseName = JnLanguage.portuguese.name();
+		List<CcpJsonRepresentation> records = new ArrayList<>();
 
-		CcpJsonRepresentation data = put2
-		.put(JnJsonCommonsFields.language, portugueseName)
-		;
-		
-		
-		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(
-				ENTITY
-				,data
-				);
+		for (JbCommandNamesInPortuguese commandName : commandNames) {
+			String canonicalName = commandName.name();
+			String nameInPortuguese = commandName.getValue();
+			CcpJsonRepresentation record = CcpOtherConstants.EMPTY_JSON
+					.put(JnJsonInstantMessengerFields.commandName, canonicalName)
+					.put(JnJsonInstantMessengerFields.message, nameInPortuguese)
+					.put(JnJsonCommonsFields.language, portugueseName);
+			records.add(record);
+		}
+
+		CcpJsonRepresentation[] recordsArray = records.toArray(new CcpJsonRepresentation[0]);
+		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(ENTITY, recordsArray);
 		return createBulkItems;
 	}
 

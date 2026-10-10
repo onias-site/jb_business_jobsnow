@@ -26,6 +26,7 @@ import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
 import com.ccp.process.CcpProcessStatusDefault;
 import com.jb.business.bots.command.allowed.JbSupportAllowCommandToUser;
 import com.jb.business.bots.command.allowed.JbSupportAllowCommandToUserStatus;
+import com.jb.business.bots.engine.JbCommandNamesInPortuguese;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.login.token.JbSupportLoginToken;
 import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsChoose;
@@ -229,7 +230,8 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 		CcpJsonRepresentation requestNotFoundFlow = getStepFlow(requestNotFound, "", portuguese, english, spanish);
 
 		String allowCommandToUser = "/" + JbSupportBotCommands.allowCommandToUser + " " + email;
-		CcpJsonRepresentation portugueseNotAllowed = getStepFlowMessage(JnLanguage.portuguese, "O usuário " + email + " está sendo ignorado pelo suporte e as solicitações dele não são atendidas em nenhum comando. Para voltar a atendê-lo, use " + allowCommandToUser);
+		String allowCommandToUserInPortuguese = "/" + JbCommandNamesInPortuguese.allowCommandToUser.getValue() + " " + email;
+		CcpJsonRepresentation portugueseNotAllowed = getStepFlowMessage(JnLanguage.portuguese, "O usuário " + email + " está sendo ignorado pelo suporte e as solicitações dele não são atendidas em nenhum comando. Para voltar a atendê-lo, use " + allowCommandToUserInPortuguese);
 		CcpJsonRepresentation englishNotAllowed = getStepFlowMessage(JnLanguage.english, "The user " + email + " is being ignored by the support and their requests are not reviewed in any command. To review them again, use " + allowCommandToUser);
 		CcpJsonRepresentation spanishNotAllowed = getStepFlowMessage(JnLanguage.spanish, "El usuario " + email + " está siendo ignorado por el soporte y sus solicitudes no se atienden en ningún comando. Para volver a atenderlo, use " + allowCommandToUser);
 		int userNotAllowed = JbSupportSkillSuggestionStatus.userNotAllowed.asNumber();
@@ -324,7 +326,8 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 		CcpJsonRepresentation reviewFinishedFlow = getStepFlow(reviewFinished, "", botReply);
 
 		String allowCommandToUser = "/" + JbSupportBotCommands.allowCommandToUser + " " + email;
-		CcpJsonRepresentation portugueseNotAllowed = getStepFlowMessage(JnLanguage.portuguese, "O usuário " + email + " está sendo ignorado pelo suporte e as solicitações dele não são atendidas em nenhum comando. Para voltar a atendê-lo, use " + allowCommandToUser);
+		String allowCommandToUserInPortuguese = "/" + JbCommandNamesInPortuguese.allowCommandToUser.getValue() + " " + email;
+		CcpJsonRepresentation portugueseNotAllowed = getStepFlowMessage(JnLanguage.portuguese, "O usuário " + email + " está sendo ignorado pelo suporte e as solicitações dele não são atendidas em nenhum comando. Para voltar a atendê-lo, use " + allowCommandToUserInPortuguese);
 		CcpJsonRepresentation englishNotAllowed = getStepFlowMessage(JnLanguage.english, "The user " + email + " is being ignored by the support and their requests are not reviewed in any command. To review them again, use " + allowCommandToUser);
 		CcpJsonRepresentation spanishNotAllowed = getStepFlowMessage(JnLanguage.spanish, "El usuario " + email + " está siendo ignorado por el soporte y sus solicitudes no se atienden en ningún comando. Para volver a atenderlo, use " + allowCommandToUser);
 		int userNotAllowed = JbSupportSkillFixHierarchyStatus.userNotAllowed.asNumber();

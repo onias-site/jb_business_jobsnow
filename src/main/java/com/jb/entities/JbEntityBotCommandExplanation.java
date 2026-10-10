@@ -70,7 +70,7 @@ public class JbEntityBotCommandExplanation implements CcpEntityConfigurator {
 	}
 	
 	/**
-	 * Seeds the Portuguese explanation of {@code solveLoginTokenTicket}.
+	 * Seeds the Portuguese and English explanations of {@code solveLoginTokenTicket}.
 	 * @return the seed records
 	 */
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
@@ -87,9 +87,16 @@ public class JbEntityBotCommandExplanation implements CcpEntityConfigurator {
 
 		
 		
+		String englishName = JnLanguage.english.name();
+		CcpJsonRepresentation solveLoginTokenTicketInEnglish = CcpOtherConstants.EMPTY_JSON
+				.put(JnJsonInstantMessengerFields.commandName, solveLoginTokenTicketName)
+				.put(JnJsonCommonsFields.language, englishName)
+				.put(JnJsonInstantMessengerFields.message, "When the user claims that their login token is locked or was not sent, they open a request that the support team receives, then the support operator invokes this command to solve the request the user opened");
+
 		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(
 				ENTITY
 				,solveLoginTokenTicket
+				,solveLoginTokenTicketInEnglish
 				);
 		return createBulkItems;
 	}

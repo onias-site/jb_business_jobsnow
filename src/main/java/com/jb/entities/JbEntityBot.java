@@ -20,6 +20,8 @@ import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFr
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorArray;
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
 import com.jb.business.bots.engine.JbBotType;
+import com.jb.business.bots.engine.JbDefaultBotCommandMessages;
+import com.jb.business.bots.engine.JbLanguageNames;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.login.token.JbSupportLoginTokenTypes;
 import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsMessages;
@@ -208,6 +210,26 @@ public class JbEntityBot implements CcpEntityConfigurator {
 
 		List<CcpBulkItem> skillSuggestionMessages = this.getSkillSuggestionMessages();
 		systemMessages.addAll(skillSuggestionMessages);
+
+		this.addSystemMessage(systemMessages, JbDefaultBotCommandMessages.commandExited
+				, "Você saiu do comando {commandName}. Agora você pode executar outro comando."
+				, "You left the command {commandName}. Now you can run another command.");
+
+		this.addSystemMessage(systemMessages, JbDefaultBotCommandMessages.languageSet
+				, "Idioma definido: {languageName}."
+				, "Language set: {languageName}.");
+
+		this.addSystemMessage(systemMessages, JbDefaultBotCommandMessages.chooseLanguage
+				, "Seu idioma atual é {languageName}. Para trocar, digite {commandName} seguido de um destes idiomas: {languages}"
+				, "Your current language is {languageName}. To change it, type {commandName} followed by one of these languages: {languages}");
+
+		this.addSystemMessage(systemMessages, JbDefaultBotCommandMessages.unknownLanguage
+				, "Idioma não reconhecido: {typedLanguage}. Digite {commandName} seguido de um destes idiomas: {languages}"
+				, "Unknown language: {typedLanguage}. Type {commandName} followed by one of these languages: {languages}");
+
+		this.addSystemMessage(systemMessages, JbLanguageNames.portuguese, "português", "Portuguese");
+		this.addSystemMessage(systemMessages, JbLanguageNames.english, "inglês", "English");
+		this.addSystemMessage(systemMessages, JbLanguageNames.spanish, "espanhol", "Spanish");
 
 		return systemMessages;
 	}
