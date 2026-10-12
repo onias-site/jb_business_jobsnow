@@ -15,7 +15,8 @@ import com.vis.entities.VisEntitySkillFixHierarchyItemPending;
  * current item, always with a justification. The step repeats itself (its {@code nextStep} is itself) while
  * there are items left, asking for the next one; the decision on the last item finishes the review
  * ({@code reviewFinished}). An answer that is not a decision with justification asks again for the same item
- * ({@code invalidAnswer}).
+ * ({@code invalidAnswer}). A request the user withdrew in the middle of the review ends the session with a notice to
+ * the operator ({@code requestWithdrawn}), before the answer is read.
  */
 public class JbSupportSkillFixHierarchyDecideItem implements CcpBusiness {
 
@@ -23,9 +24,11 @@ public class JbSupportSkillFixHierarchyDecideItem implements CcpBusiness {
 	 * Records the decision on the current item and asks for the next one, or finishes the review after the last.
 	 * @param json the session, with {@code itemIndex}
 	 * @return the session asking for the next item
-	 * @throws CcpErrorFlowDisturb with {@code reviewFinished} or {@code invalidAnswer}
+	 * @throws CcpErrorFlowDisturb with {@code reviewFinished}, {@code invalidAnswer} or {@code requestWithdrawn}
 	 */
 	public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+
+		JbSupportSkillFixHierarchyConversation.endIfTheRequestWasWithdrawn(json);
 
 		int itemIndex = json.getAsIntegerNumber(JbSupportSkillFixHierarchyFields.itemIndex);
 		JbSupportSkillFixHierarchyAnswer answer = JbSupportSkillFixHierarchyAnswer.read(json);

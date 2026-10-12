@@ -9,8 +9,9 @@ import com.ccp.process.CcpProcessStatus;
  * ({@code reviewFinished}, the session ends with the summary of the review), the operator asked to ignore the
  * user ({@code ignoreConfirmationAsked}, goes on to the confirmation), gave up ignoring the user
  * ({@code ignoreCanceled}, back to the choice of how to decide the items) or confirmed it ({@code userIgnored},
- * the session ends), or the user is ignored for the command ({@code userNotAllowed}, the session ends with a
- * notice to the operator).
+ * the session ends), the user is ignored for the command ({@code userNotAllowed}, the session ends with a
+ * notice to the operator), or the user withdrew the request in the middle of the review ({@code requestWithdrawn},
+ * the session ends with a notice to the operator).
  */
 public enum JbSupportSkillFixHierarchyStatus implements CcpProcessStatus{
 	/** Status 404: there is no pending item for the e-mail and the parent. */
@@ -26,7 +27,9 @@ public enum JbSupportSkillFixHierarchyStatus implements CcpProcessStatus{
 	/** Status 205: the operator gave up ignoring the user. */
 	ignoreCanceled(205),
 	/** Status 403: the user is ignored for the command. */
-	userNotAllowed(403)
+	userNotAllowed(403),
+	/** Status 410: the user withdrew the request while the operator was reviewing it; the session ends. */
+	requestWithdrawn(410)
 	;
 
 	/** The HTTP status code. */

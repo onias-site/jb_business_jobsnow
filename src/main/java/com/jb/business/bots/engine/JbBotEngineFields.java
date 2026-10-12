@@ -20,5 +20,10 @@ public enum JbBotEngineFields implements CcpJsonFieldName{
 	/** The {@code ticketFromTheList} field. */
 	ticketFromTheList,
 	/** The {@code typedValueToRedirect} field. */
-	typedValueToRedirect
+	typedValueToRedirect,
+	/**
+	 * The {@code listToShowAgain} field: the list command (as typed, with the {@code /}) to show again when the command
+	 * started from it finishes, as {@link #ticketFromTheList} does for {@code /pendingTickets}.
+	 */
+	listToShowAgain
 }

@@ -29,6 +29,10 @@ import com.jb.business.bots.command.allowed.JbSupportAllowCommandToUserStatus;
 import com.jb.business.bots.engine.JbCommandNamesInPortuguese;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.login.token.JbSupportLoginToken;
+import com.jb.business.bots.ignored.users.JbSupportIgnoredUsersChoose;
+import com.jb.business.bots.ignored.users.JbSupportIgnoredUsersShow;
+import com.jb.business.bots.ignored.users.JbSupportIgnoredUsersStatus;
+import com.jb.business.bots.ignored.users.JbSupportIgnoredUsersSteps;
 import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsChoose;
 import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsShow;
 import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsStatus;
@@ -205,6 +209,8 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 				, this.getAllowCommandToUserStep()
 				, this.getPendingTicketsStep()
 				, this.getChoosePendingTicketStep()
+				, this.getIgnoredUsersStep()
+				, this.getChooseIgnoredUserStep()
 				, this.getShowSkillSuggestionStep()
 				, this.getDecideSkillSuggestionStep()
 				, this.getConfirmSkillSuggestionIgnoreStep());
@@ -339,7 +345,8 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 
 	/**
 	 * Approve all, reject all (finishing the review), one by one (going on to the item decision) or ignore the
-	 * user (going on to its confirmation). An answer not understood repeats this step.
+	 * user (going on to its confirmation). An answer not understood repeats this step; a request the user withdrew
+	 * meanwhile ends the session with a notice to the operator.
 	 */
 	private CcpJsonRepresentation getChooseSkillFixHierarchyReviewModeStep() {
 		String chooseMode = JbSupportSkillFixHierarchySteps.fixSkillHierarchyChooseMode.name();
@@ -353,8 +360,10 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 		CcpJsonRepresentation invalidAnswerFlow = getStepFlow(invalidAnswer, chooseMode, botReply);
 		CcpJsonRepresentation reviewFinishedFlow = getStepFlow(reviewFinished, "", botReply);
 		CcpJsonRepresentation ignoreConfirmationAskedFlow = getStepFlow(ignoreConfirmationAsked, confirmIgnore, botReply);
+		int requestWithdrawn = JbSupportSkillFixHierarchyStatus.requestWithdrawn.asNumber();
+		CcpJsonRepresentation requestWithdrawnFlow = getStepFlow(requestWithdrawn, "", botReply);
 
-		CcpJsonRepresentation step = getBotCommandStep(chooseMode, JbSupportSkillFixHierarchyChooseMode.class, decideItem, invalidAnswerFlow, reviewFinishedFlow, ignoreConfirmationAskedFlow);
+		CcpJsonRepresentation step = getBotCommandStep(chooseMode, JbSupportSkillFixHierarchyChooseMode.class, decideItem, invalidAnswerFlow, reviewFinishedFlow, ignoreConfirmationAskedFlow, requestWithdrawnFlow);
 		return step;
 	}
 
@@ -413,6 +422,43 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 	}
 
 	/**
+	 * {@code /ignoredUsers}: shows how many users the support is ignoring and the first one, and goes on to the
+	 * choice between stopping ignoring them and going to the next one. Without any ignored user the session ends with
+	 * that notice.
+	 */
+	private CcpJsonRepresentation getIgnoredUsersStep() {
+		String commandName = JbSupportBotCommands.ignoredUsers.name();
+		String choose = JbSupportIgnoredUsersSteps.ignoredUsersChoose.name();
+		CcpJsonRepresentation[] botReply = this.getBotReplyInEveryLanguage();
+
+		int noIgnoredUser = JbSupportIgnoredUsersStatus.noIgnoredUser.asNumber();
+		CcpJsonRepresentation noIgnoredUserFlow = getStepFlow(noIgnoredUser, "", botReply);
+
+		CcpJsonRepresentation step = getBotCommandStep(commandName, JbSupportIgnoredUsersShow.class, choose, noIgnoredUserFlow);
+		return step;
+	}
+
+	/**
+	 * Stop ignoring the user shown (ending the session, after which the bot runs {@code /allowCommandToUser} for the
+	 * user and then shows the list again) or go to the next one (repeating this step). An answer not understood
+	 * repeats this step, and a list that became empty in the meantime ends the session.
+	 */
+	private CcpJsonRepresentation getChooseIgnoredUserStep() {
+		String choose = JbSupportIgnoredUsersSteps.ignoredUsersChoose.name();
+		CcpJsonRepresentation[] botReply = this.getBotReplyInEveryLanguage();
+
+		int invalidAnswer = JbSupportIgnoredUsersStatus.invalidAnswer.asNumber();
+		int noIgnoredUser = JbSupportIgnoredUsersStatus.noIgnoredUser.asNumber();
+		int userChosen = JbSupportIgnoredUsersStatus.userChosen.asNumber();
+		CcpJsonRepresentation invalidAnswerFlow = getStepFlow(invalidAnswer, choose, botReply);
+		CcpJsonRepresentation noIgnoredUserFlow = getStepFlow(noIgnoredUser, "", botReply);
+		CcpJsonRepresentation userChosenFlow = getStepFlow(userChosen, "", botReply);
+
+		CcpJsonRepresentation step = getBotCommandStep(choose, JbSupportIgnoredUsersChoose.class, choose, invalidAnswerFlow, noIgnoredUserFlow, userChosenFlow);
+		return step;
+	}
+
+	/**
 	 * Confirmation of the intention to ignore the user: yes ends the session with the user ignored, no goes back
 	 * to the choice of how to decide the items, and an answer not understood repeats this step.
 	 */
@@ -433,7 +479,8 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 	}
 
 	/**
-	 * Decision on one item; the step repeats itself until the last item, which finishes the review.
+	 * Decision on one item; the step repeats itself until the last item, which finishes the review. A request the user
+	 * withdrew in the middle of the review ends the session with a notice to the operator.
 	 */
 	private CcpJsonRepresentation getDecideSkillFixHierarchyItemStep() {
 		String decideItem = JbSupportSkillFixHierarchySteps.fixSkillHierarchyDecideItem.name();
@@ -443,8 +490,10 @@ public class JbEntityBotCommandStep implements CcpEntityConfigurator {
 		int reviewFinished = JbSupportSkillFixHierarchyStatus.reviewFinished.asNumber();
 		CcpJsonRepresentation invalidAnswerFlow = getStepFlow(invalidAnswer, decideItem, botReply);
 		CcpJsonRepresentation reviewFinishedFlow = getStepFlow(reviewFinished, "", botReply);
+		int requestWithdrawn = JbSupportSkillFixHierarchyStatus.requestWithdrawn.asNumber();
+		CcpJsonRepresentation requestWithdrawnFlow = getStepFlow(requestWithdrawn, "", botReply);
 
-		CcpJsonRepresentation step = getBotCommandStep(decideItem, JbSupportSkillFixHierarchyDecideItem.class, decideItem, invalidAnswerFlow, reviewFinishedFlow);
+		CcpJsonRepresentation step = getBotCommandStep(decideItem, JbSupportSkillFixHierarchyDecideItem.class, decideItem, invalidAnswerFlow, reviewFinishedFlow, requestWithdrawnFlow);
 		return step;
 	}
 }

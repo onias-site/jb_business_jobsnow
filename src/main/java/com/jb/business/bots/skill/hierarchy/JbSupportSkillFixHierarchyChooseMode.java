@@ -18,7 +18,8 @@ import com.vis.entities.VisEntitySkillFixHierarchyItemPending;
  * <p>Deciding all the items finishes the review ({@code reviewFinished}). Choosing one by one asks for the
  * first item and goes on to the next step. Choosing to ignore the user asks for the confirmation
  * ({@code ignoreConfirmationAsked}). Any other answer, including a decision without justification, is
- * asked again ({@code invalidAnswer}).
+ * asked again ({@code invalidAnswer}). A request the user withdrew after it was shown ends the session with a notice
+ * to the operator ({@code requestWithdrawn}), before the answer is read.
  */
 public class JbSupportSkillFixHierarchyChooseMode implements CcpBusiness {
 
@@ -26,9 +27,11 @@ public class JbSupportSkillFixHierarchyChooseMode implements CcpBusiness {
 	 * Handles the choice of the operator.
 	 * @param json the session, with the items to review
 	 * @return the session asking for the first item, when the operator chose one by one
-	 * @throws CcpErrorFlowDisturb with {@code reviewFinished}, {@code ignoreConfirmationAsked} or {@code invalidAnswer}
+	 * @throws CcpErrorFlowDisturb with {@code reviewFinished}, {@code ignoreConfirmationAsked}, {@code invalidAnswer} or {@code requestWithdrawn}
 	 */
 	public CcpJsonRepresentation apply(CcpJsonRepresentation json) {
+
+		JbSupportSkillFixHierarchyConversation.endIfTheRequestWasWithdrawn(json);
 
 		JbSupportSkillFixHierarchyAnswer answer = JbSupportSkillFixHierarchyAnswer.read(json);
 

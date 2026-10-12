@@ -296,12 +296,19 @@ class Bot implements JbBotBusiness{
 			return result;
 		}
 
-		CcpJsonRepresentation messageWithoutTheFlag = message.removeFields(JbBotEngineFields.ticketFromTheList);
+		CcpJsonRepresentation messageWithoutTheFlag = message.removeFields(JbBotEngineFields.ticketFromTheList, JbBotEngineFields.listToShowAgain);
 		CcpJsonRepresentation redirectedMessage = messageWithoutTheFlag.put(JnJsonInstantMessengerFields.message, typedValueToRedirect);
 		boolean ticketFromTheList = result.getAsBoolean(JbBotEngineFields.ticketFromTheList);
 
 		if(ticketFromTheList) {
 			redirectedMessage = redirectedMessage.put(JbBotEngineFields.ticketFromTheList, true);
+		}
+
+		String listToShowAgain = result.getAsString(JbBotEngineFields.listToShowAgain);
+		boolean hasListToShowAgain = false == listToShowAgain.isEmpty();
+
+		if(hasListToShowAgain) {
+			redirectedMessage = redirectedMessage.put(JbBotEngineFields.listToShowAgain, listToShowAgain);
 		}
 
 		CcpJsonRepresentation redirectedResult = this.execute(redirectedMessage);

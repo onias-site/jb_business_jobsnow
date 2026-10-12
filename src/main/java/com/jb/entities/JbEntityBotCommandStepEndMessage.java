@@ -21,6 +21,7 @@ import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFr
 import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
 import com.ccp.json.validations.fields.annotations.type.CcpJsonFieldTypeString;
 import com.jb.business.bots.engine.JbSupportBotCommands;
+import com.jb.business.bots.ignored.users.JbSupportIgnoredUsersSteps;
 import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsSteps;
 import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchyFields;
 import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchySteps;
@@ -98,7 +99,7 @@ public class JbEntityBotCommandStepEndMessage implements CcpEntityConfigurator {
 	}
 
 	/**
-	 * The steps of the {@code fixSkillHierarchy}, {@code reviewSkillSuggestion} and {@code pendingTickets} commands end by sending the operator
+	 * The steps of the {@code fixSkillHierarchy}, {@code reviewSkillSuggestion}, {@code pendingTickets} and {@code ignoredUsers} commands end by sending the operator
 	 * the text their engine left in {@code botReply} (the request, the next item, the next ticket, and so on),
 	 * already written in the language of the session.
 	 */
@@ -113,7 +114,9 @@ public class JbEntityBotCommandStepEndMessage implements CcpEntityConfigurator {
 				JbSupportSkillSuggestionSteps.reviewSkillSuggestionDecide.name(),
 				JbSupportSkillSuggestionSteps.reviewSkillSuggestionConfirmIgnore.name(),
 				JbSupportBotCommands.pendingTickets.name(),
-				JbSupportPendingTicketsSteps.pendingTicketsChoose.name());
+				JbSupportPendingTicketsSteps.pendingTicketsChoose.name(),
+				JbSupportBotCommands.ignoredUsers.name(),
+				JbSupportIgnoredUsersSteps.ignoredUsersChoose.name());
 		JnLanguage[] languages = JnLanguage.values();
 		List<CcpJsonRepresentation> endMessages = new ArrayList<>();
 

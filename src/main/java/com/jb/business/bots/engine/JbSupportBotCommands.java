@@ -17,6 +17,8 @@ public enum JbSupportBotCommands {
 	/** Goes through the pending tickets. */
 	pendingTickets,
 	/** Reviews the skills suggested by the users. */
-	reviewSkillSuggestion
+	reviewSkillSuggestion,
+	/** Goes through the users ignored by the support, to stop ignoring them. */
+	ignoredUsers
 	;
 }

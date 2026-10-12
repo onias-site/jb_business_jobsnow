@@ -63,5 +63,11 @@ public enum JbSupportSkillFixHierarchyMessages implements JnSystemMessage {
 
 	/** The items of the type rejected in an earlier review, which will not be asked: {@code {skills}}. */
 	rejectedBefore,
+
+	/**
+	 * The user withdrew the request while the operator was reviewing it, which ends the review:
+	 * {@code {email}}, {@code {typeDescription}} and {@code {parent}}.
+	 */
+	requestWithdrawn,
 	;
 }

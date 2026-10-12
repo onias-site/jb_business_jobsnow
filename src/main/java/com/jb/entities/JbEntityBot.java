@@ -24,6 +24,7 @@ import com.jb.business.bots.engine.JbDefaultBotCommandMessages;
 import com.jb.business.bots.engine.JbLanguageNames;
 import com.jb.business.bots.engine.JbSupportBotCommands;
 import com.jb.business.bots.login.token.JbSupportLoginTokenTypes;
+import com.jb.business.bots.ignored.users.JbSupportIgnoredUsersMessages;
 import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsMessages;
 import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchyMessages;
 import com.jb.business.bots.skill.suggestion.JbSupportSkillSuggestionMessages;
@@ -205,8 +206,17 @@ public class JbEntityBot implements CcpEntityConfigurator {
 				, "Já reprovados anteriormente (não serão perguntados): {skills}\n"
 				, "Already rejected before (will not be asked): {skills}\n");
 
+		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.requestWithdrawn
+				, "O usuário {email} desistiu da solicitação de {typeDescription} com o termo {parent} enquanto ela era avaliada. "
+				+ "A avaliação foi encerrada e as decisões tomadas até aqui foram descartadas."
+				, "The user {email} withdrew the {typeDescription} request with the term {parent} while it was being reviewed. "
+				+ "The review was ended and the decisions taken so far were discarded.");
+
 		List<CcpBulkItem> pendingTicketsMessages = this.getPendingTicketsMessages();
 		systemMessages.addAll(pendingTicketsMessages);
+
+		List<CcpBulkItem> ignoredUsersMessages = this.getIgnoredUsersMessages();
+		systemMessages.addAll(ignoredUsersMessages);
 
 		List<CcpBulkItem> skillSuggestionMessages = this.getSkillSuggestionMessages();
 		systemMessages.addAll(skillSuggestionMessages);
@@ -334,6 +344,47 @@ public class JbEntityBot implements CcpEntityConfigurator {
 		this.addSystemMessage(systemMessages, JbSupportPendingTicketsMessages.ticketChosen
 				, "Resolvendo o ticket {ticket}"
 				, "Solving the ticket {ticket}");
+
+		return systemMessages;
+	}
+
+	/**
+	 * Texts of the {@code ignoredUsers} command ({@link JbSupportIgnoredUsersMessages}).
+	 */
+	private List<CcpBulkItem> getIgnoredUsersMessages() {
+		List<CcpBulkItem> systemMessages = new ArrayList<>();
+
+		this.addSystemMessage(systemMessages, JbSupportIgnoredUsersMessages.oneUser
+				, "O suporte está ignorando 1 usuário"
+				, "The support is ignoring 1 user");
+
+		this.addSystemMessage(systemMessages, JbSupportIgnoredUsersMessages.manyUsers
+				, "O suporte está ignorando {usersCount} usuários"
+				, "The support is ignoring {usersCount} users");
+
+		this.addSystemMessage(systemMessages, JbSupportIgnoredUsersMessages.userPrompt
+				, "Usuário {userNumber} de {usersCount} => {email}\n"
+				+ "Ignorado no comando {commandName} ({request})\n"
+				+ "Digite \"1\" para voltar a atendê-lo ou \"2\" para ir ao próximo"
+				, "User {userNumber} of {usersCount} => {email}\n"
+				+ "Ignored in the command {commandName} ({request})\n"
+				+ "Type \"1\" to review their requests again or \"2\" to go to the next one");
+
+		this.addSystemMessage(systemMessages, JbSupportIgnoredUsersMessages.noIgnoredUser
+				, "O suporte não está ignorando nenhum usuário."
+				, "The support is not ignoring any user.");
+
+		this.addSystemMessage(systemMessages, JbSupportIgnoredUsersMessages.notUnderstood
+				, "Não entendi a resposta.\n\n"
+				, "I did not understand the answer.\n\n");
+
+		this.addSystemMessage(systemMessages, JbSupportIgnoredUsersMessages.userAlreadyAllowed
+				, "O usuário {email} já não é mais ignorado.\n\n"
+				, "The user {email} is no longer ignored.\n\n");
+
+		this.addSystemMessage(systemMessages, JbSupportIgnoredUsersMessages.userChosen
+				, "Voltando a atender o usuário {email}"
+				, "Reviewing the requests of the user {email} again");
 
 		return systemMessages;
 	}

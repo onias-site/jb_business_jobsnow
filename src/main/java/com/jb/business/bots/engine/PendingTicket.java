@@ -50,6 +50,16 @@ final class PendingTicket {
 		JbEntityPendingTickets.ENTITY.delete(pendingTicket);
 		JnEntitySupportPendingCommand.ENTITY.delete(pendingCommand);
 
+		// a command started from another list (/ignoredUsers) shows that list again, without the flag, for the same reason
+		String listToShowAgain = stepInput.getAsString(JbBotEngineFields.listToShowAgain);
+		boolean startedFromAnotherList = false == listToShowAgain.isEmpty();
+
+		if(startedFromAnotherList) {
+			CcpJsonRepresentation resultWithoutTheList = result.removeFields(JbBotEngineFields.listToShowAgain);
+			CcpJsonRepresentation resultShowingTheOtherListAgain = resultWithoutTheList.put(JbBotEngineFields.typedValueToRedirect, listToShowAgain);
+			return resultShowingTheOtherListAgain;
+		}
+
 		boolean startedFromTheList = stepInput.getAsBoolean(JbBotEngineFields.ticketFromTheList);
 
 		if(false == startedFromTheList) {

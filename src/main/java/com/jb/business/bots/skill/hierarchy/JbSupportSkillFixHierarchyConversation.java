@@ -115,6 +115,30 @@ final class JbSupportSkillFixHierarchyConversation {
 	}
 
 	/**
+	 * Ends the session when the user withdrew the request after the operator started reviewing it: without this check,
+	 * the operator went on deciding item by item a request that no longer existed, and only the summary at the end
+	 * (with nothing applied) hinted at it. Runs on every answer of the operator, before it is read.
+	 * @param json the session, with {@code email}, {@code parent} and {@code type}
+	 * @throws CcpErrorFlowDisturb with {@code requestWithdrawn}, when the request is no longer pending
+	 */
+	static void endIfTheRequestWasWithdrawn(CcpJsonRepresentation json) {
+		CcpJsonRepresentation requestKey = json.getJsonPiece(VisEntitySkillFixHierarchyPending.Fields.email, VisEntitySkillFixHierarchyPending.Fields.parent, VisEntitySkillFixHierarchyPending.Fields.type);
+		boolean requestIsPending = VisEntitySkillFixHierarchyPending.ENTITY.exists(requestKey);
+
+		if(requestIsPending) {
+			return;
+		}
+
+		JnLanguage language = getLanguage(json);
+		VisSkillFixHierarchyTypes type = json.getAsEnum(VisEntitySkillFixHierarchyPending.Fields.type, VisSkillFixHierarchyTypes.class);
+		String typeDescription = type.getDescription(language);
+		CcpJsonRepresentation parameters = requestKey.put(JbSupportSkillFixHierarchyMessageFields.typeDescription, typeDescription);
+		String withdrawnNotice = JbSupportSkillFixHierarchyMessages.requestWithdrawn.getMessage(language, parameters);
+		CcpJsonRepresentation jsonWithNotice = json.put(JbSupportSkillFixHierarchyFields.botReply, withdrawnNotice);
+		JbSupportSkillFixHierarchyStatus.requestWithdrawn.throwException(jsonWithNotice);
+	}
+
+	/**
 	 * Applies the decisions (moves the items and the request, which emails the user) and ends the session with
 	 * the summary of the review.
 	 */

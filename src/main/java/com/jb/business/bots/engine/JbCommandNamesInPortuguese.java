@@ -18,6 +18,8 @@ public enum JbCommandNamesInPortuguese implements CcpJsonFieldName{
 	pendingTickets { public String getValue() { return "ticketsPendentes"; } },
 	/** {@code /avaliarSugestaoDeHabilidade}. */
 	reviewSkillSuggestion { public String getValue() { return "avaliarSugestaoDeHabilidade"; } },
+	/** {@code /listarUsuariosIgnorados}. */
+	ignoredUsers { public String getValue() { return "listarUsuariosIgnorados"; } },
 	/** {@code /idDoChat}. */
 	chatId { public String getValue() { return "idDoChat"; } },
 	/** {@code /mostrarTodosOsComandos}. */
