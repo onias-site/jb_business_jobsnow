@@ -14,7 +14,6 @@ import com.ccp.business.CcpBusiness;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.especifications.db.crud.CcpSelectUnionAll;
 import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityMetaData;
-import com.jb.entities.JbEntityBot;
 import com.jb.entities.JbEntityBotAllowedUser;
 import com.jb.entities.JbEntityBotCommandStepSession;
 import com.jb.entities.JbEntityBotExplanation;
@@ -51,7 +50,7 @@ class Bot implements JbBotBusiness{
 		String botTypeName = botType.name();
 		this.explanations = this.loadLabelsWithLanguages(botTypeName, resultFromSearchBots, JbEntityBotExplanation.ENTITY, JnJsonInstantMessengerFields.botName);
 		this.allowedUsers = this.loadAllowedUsers(botType, resultFromSearchBots);
-		this.commands = this.loadCommands(botType, resultFromSearchBots);
+		this.commands = this.loadCommands(botType);
 		this.isRestricted = botType.isRestricted();
 		this.botType = botType;
 		
@@ -75,16 +74,13 @@ class Bot implements JbBotBusiness{
 	}
 
 	/**
-	 * Reads the configured commands and adds the default ones.
+	 * Reads the configured commands (of every cost center, by {@code botName}) and adds the default ones.
 	 * @param valueOf the type of the bot
-	 * @param resultFromSearchBots the search result
 	 * @return the command names
 	 */
-	private List<String> loadCommands(JbBotType valueOf, CcpSelectUnionAll resultFromSearchBots){
-		Supplier<CcpJsonRepresentation> jsonSupplier = valueOf.getParameterToSearchBot();
-		CcpJsonRepresentation recordFromUnionAll = JbEntityBot.ENTITY.getRecordFromUnionAll(resultFromSearchBots, jsonSupplier);
-		List<String> asStringList2 = recordFromUnionAll.getAsStringList(JnJsonInstantMessengerFields.commandName);
-		List<String> commands = new ArrayList<>(asStringList2);
+	private List<String> loadCommands(JbBotType valueOf){
+		List<String> configuredCommands = valueOf.getConfiguredCommands();
+		List<String> commands = new ArrayList<>(configuredCommands);
 		JbDefaultBotCommandStep[] values = JbDefaultBotCommandStep.values();
 		Stream<JbDefaultBotCommandStep> stream2 = Arrays.asList(values).stream();
 		var stream2Map = stream2.map(x -> x.name());
@@ -288,7 +284,7 @@ class Bot implements JbBotBusiness{
 	 */
 	private CcpJsonRepresentation redirect(CcpJsonRepresentation message, CcpJsonRepresentation result) {
 
-		String typedValueToRedirect = result.getAsString(JbBotEngineFields.typedValueToRedirect);
+		String typedValueToRedirect = result.getAsString(JnJsonInstantMessengerFields.typedValueToRedirect);
 		String typedValue = message.getAsString(JnJsonInstantMessengerFields.message);
 		boolean nothingToRedirect = typedValueToRedirect.isEmpty() || typedValueToRedirect.equals(typedValue);
 
@@ -296,7 +292,7 @@ class Bot implements JbBotBusiness{
 			return result;
 		}
 
-		CcpJsonRepresentation messageWithoutTheFlag = message.removeFields(JbBotEngineFields.ticketFromTheList, JbBotEngineFields.listToShowAgain);
+		CcpJsonRepresentation messageWithoutTheFlag = message.removeFields(JbBotEngineFields.ticketFromTheList, JnJsonInstantMessengerFields.listToShowAgain);
 		CcpJsonRepresentation redirectedMessage = messageWithoutTheFlag.put(JnJsonInstantMessengerFields.message, typedValueToRedirect);
 		boolean ticketFromTheList = result.getAsBoolean(JbBotEngineFields.ticketFromTheList);
 
@@ -304,11 +300,11 @@ class Bot implements JbBotBusiness{
 			redirectedMessage = redirectedMessage.put(JbBotEngineFields.ticketFromTheList, true);
 		}
 
-		String listToShowAgain = result.getAsString(JbBotEngineFields.listToShowAgain);
+		String listToShowAgain = result.getAsString(JnJsonInstantMessengerFields.listToShowAgain);
 		boolean hasListToShowAgain = false == listToShowAgain.isEmpty();
 
 		if(hasListToShowAgain) {
-			redirectedMessage = redirectedMessage.put(JbBotEngineFields.listToShowAgain, listToShowAgain);
+			redirectedMessage = redirectedMessage.put(JnJsonInstantMessengerFields.listToShowAgain, listToShowAgain);
 		}
 
 		CcpJsonRepresentation redirectedResult = this.execute(redirectedMessage);

@@ -1,5 +1,6 @@
 package com.jb.business.bots.pending.tickets;
 
+import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import java.util.List;
 
 import com.ccp.business.CcpBusiness;
@@ -62,8 +63,8 @@ public class JbSupportPendingTicketsChoose implements CcpBusiness {
 
 		if(solve) {
 			String ticketChosen = JbSupportPendingTicketsList.getMessageAboutTheTicket(language, JbSupportPendingTicketsMessages.ticketChosen, currentTicket);
-			CcpJsonRepresentation jsonWithReply = json.put(JbSupportPendingTicketsFields.botReply, ticketChosen);
-			CcpJsonRepresentation jsonWithTheCommand = jsonWithReply.put(JbBotEngineFields.typedValueToRedirect, currentTicket);
+			CcpJsonRepresentation jsonWithReply = json.put(JnJsonInstantMessengerFields.botReply, ticketChosen);
+			CcpJsonRepresentation jsonWithTheCommand = jsonWithReply.put(JnJsonInstantMessengerFields.typedValueToRedirect, currentTicket);
 			CcpJsonRepresentation jsonFromTheList = jsonWithTheCommand.put(JbBotEngineFields.ticketFromTheList, true);
 			CcpJsonRepresentation chosen = JbSupportPendingTicketsStatus.ticketChosen.throwException(jsonFromTheList);
 			return chosen;
@@ -96,7 +97,7 @@ public class JbSupportPendingTicketsChoose implements CcpBusiness {
 		String ticketPrompt = JbSupportPendingTicketsList.getTicketPrompt(language, tickets, ticketIndex);
 		String reply = notice + ticketPrompt;
 		String ticket = tickets.get(ticketIndex);
-		CcpJsonRepresentation jsonWithReply = json.put(JbSupportPendingTicketsFields.botReply, reply);
+		CcpJsonRepresentation jsonWithReply = json.put(JnJsonInstantMessengerFields.botReply, reply);
 		CcpJsonRepresentation jsonWithTheTicket = jsonWithReply.put(JbSupportPendingTicketsFields.currentTicket, ticket);
 		return jsonWithTheTicket;
 	}

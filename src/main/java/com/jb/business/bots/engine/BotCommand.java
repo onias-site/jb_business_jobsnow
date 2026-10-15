@@ -12,9 +12,9 @@ import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpFieldName;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.especifications.db.crud.CcpSelectUnionAll;
-import com.jb.entities.JbEntityBotCommand;
-import com.jb.entities.JbEntityBotCommandExplanation;
-import com.jb.entities.JbEntityBotCommandName;
+import com.jn.entities.JnEntityBotCommand;
+import com.jn.entities.JnEntityBotCommandExplanation;
+import com.jn.entities.JnEntityBotCommandName;
 import com.jn.entities.JnEntitySupportPendingCommand;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
@@ -44,8 +44,8 @@ class BotCommand implements JbBotBusiness{
 	 */
 	BotCommand(String name, CcpSelectUnionAll result) {
 
-		this.explanations = this.loadLabelsWithLanguages(name, result, JbEntityBotCommandExplanation.ENTITY, JnJsonInstantMessengerFields.commandName);
-		this.names = this.loadLabelsWithLanguages(name, result, JbEntityBotCommandName.ENTITY, JnJsonInstantMessengerFields.commandName);
+		this.explanations = this.loadLabelsWithLanguages(name, result, JnEntityBotCommandExplanation.ENTITY, JnJsonInstantMessengerFields.commandName);
+		this.names = this.loadLabelsWithLanguages(name, result, JnEntityBotCommandName.ENTITY, JnJsonInstantMessengerFields.commandName);
 		this.parameterNames = this.loadParameterNames(name, result);
 		this.name = name;
 	}
@@ -99,8 +99,8 @@ class BotCommand implements JbBotBusiness{
 		CcpOtherConstants.EMPTY_JSON
 		.put(JnJsonInstantMessengerFields.commandName, name)
 		;
-		CcpJsonRepresentation recordFromUnionAll = JbEntityBotCommand.ENTITY.getRecordFromUnionAll(result, jsonSupplier);
-		List<String> parameterNames = recordFromUnionAll.getAsStringList(JbEntityBotCommand.Fields.parameterName);
+		CcpJsonRepresentation recordFromUnionAll = JnEntityBotCommand.ENTITY.getRecordFromUnionAll(result, jsonSupplier);
+		List<String> parameterNames = recordFromUnionAll.getAsStringList(JnEntityBotCommand.Fields.parameterName);
 		return parameterNames;
 	}
 

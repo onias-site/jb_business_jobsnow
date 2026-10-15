@@ -234,7 +234,7 @@ final class JbSupportPendingTicketsList {
 	 */
 	static CcpJsonRepresentation noPendingTicket(CcpJsonRepresentation json, JnLanguage language) {
 		String noPendingTicket = JbSupportPendingTicketsMessages.noPendingTicket.getMessage(language);
-		CcpJsonRepresentation jsonWithReply = json.put(JbSupportPendingTicketsFields.botReply, noPendingTicket);
+		CcpJsonRepresentation jsonWithReply = json.put(JnJsonInstantMessengerFields.botReply, noPendingTicket);
 		CcpJsonRepresentation ended = JbSupportPendingTicketsStatus.noPendingTicket.throwException(jsonWithReply);
 		return ended;
 	}

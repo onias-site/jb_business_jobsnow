@@ -16,17 +16,16 @@ import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.dependency.injection.CcpDependencyInjection;
 import com.ccp.especifications.db.crud.CcpCrud;
 import com.ccp.especifications.db.crud.CcpSelectUnionAll;
-import com.jb.entities.JbEntityBot;
 import com.jb.entities.JbEntityBotAllowedUser;
-import com.jb.entities.JbEntityBotCommand;
-import com.jb.entities.JbEntityBotCommandExplanation;
-import com.jb.entities.JbEntityBotCommandName;
-import com.jb.entities.JbEntityBotCommandStep;
-import com.jb.entities.JbEntityBotCommandStepEndMessage;
-import com.jb.entities.JbEntityBotCommandStepExplanation;
-import com.jb.entities.JbEntityBotCommandStepStartMessage;
+import com.jn.entities.JnEntityBotCommand;
+import com.jn.entities.JnEntityBotCommandExplanation;
+import com.jn.entities.JnEntityBotCommandName;
+import com.jn.entities.JnEntityBotCommandStep;
+import com.jn.entities.JnEntityBotCommandStepEndMessage;
+import com.jn.entities.JnEntityBotCommandStepExplanation;
+import com.jn.entities.JnEntityBotCommandStepStartMessage;
 import com.jb.entities.JbEntityBotExplanation;
-import com.jb.entities.subfields.JbNextStepFields;
+import com.jn.entities.subfields.JnNextStepFields;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.jn.utils.JnDeleteKeysFromCache;
@@ -75,8 +74,7 @@ public class JbBotEngine {
 		CcpCrud crud = CcpDependencyInjection.getDependency(CcpCrud.class);
 		CcpSelectUnionAll resultFromSearchBots = crud.unionAll(parametersToSearchBots, JnDeleteKeysFromCache.INSTANCE, 
 				JbEntityBotAllowedUser.ENTITY,
-				JbEntityBotExplanation.ENTITY, 
-				JbEntityBot.ENTITY
+				JbEntityBotExplanation.ENTITY
 		);
 		Map<CcpJsonFieldName, Bot> allBots = new HashMap<>();
 		
@@ -87,27 +85,22 @@ public class JbBotEngine {
 		
 		this.allBots = allBots;
 		
-		k = 0;
-		
-		List<CcpJsonRepresentation> list = new ArrayList<>()
-				;
-		for (CcpJsonRepresentation parameterToSearchBot : parametersToSearchBots) {
-			Supplier<CcpJsonRepresentation> jsonSupplier = parameterToSearchBot.getJsonSupplier();
-			CcpJsonRepresentation recordFromUnionAll = JbEntityBot.ENTITY.getRecordFromUnionAll(resultFromSearchBots, jsonSupplier);
-			List<String> commands = recordFromUnionAll.getAsStringList(JnJsonInstantMessengerFields.commandName);
-			
-			String language = parameterToSearchBot.getAsString(JnJsonCommonsFields.language);
-			
+		List<CcpJsonRepresentation> list = new ArrayList<>();
+
+		// the commands of each bot are the records of JnEntityBotCommand with its botName, seeded by every cost center
+		// that adds commands to it; until 2026-10-15 they were a list in jb_bot, seeded only by jb
+		for (JbBotType bot : bots) {
+			List<String> commands = bot.getConfiguredCommands();
+			Supplier<CcpJsonRepresentation> parameterToSearchBot = bot.getParameterToSearchBot();
+			CcpJsonRepresentation botKey = parameterToSearchBot.get();
+
 			for (String command : commands) {
-				CcpJsonRepresentation putSameValueInManyFields = recordFromUnionAll.putSameValueInManyFields(command, JnJsonInstantMessengerFields.stepName, JnJsonInstantMessengerFields.commandName);
-
-					CcpJsonRepresentation parameterToSearchCommandsAndFirstSteps = 
-							putSameValueInManyFields
-						.put(JnJsonCommonsFields.language, language)
-						;
-
+				CcpJsonRepresentation commandKey = botKey.putSameValueInManyFields(command, JnJsonInstantMessengerFields.stepName, JnJsonInstantMessengerFields.commandName);
+				for (var language : languages) {
+					CcpJsonRepresentation parameterToSearchCommandsAndFirstSteps = commandKey.put(JnJsonCommonsFields.language, language);
 					list.add(parameterToSearchCommandsAndFirstSteps);
 				}
+			}
 		}
 
 		// the default commands may have a name in the language too (exit is typed /sair in Portuguese); without
@@ -129,15 +122,15 @@ public class JbBotEngine {
 		CcpJsonRepresentation[] parametersToSearchCommandsAndFirstSteps = list.toArray(new CcpJsonRepresentation[listSize]);
 
 		CcpSelectUnionAll resultFromSearchCommandsAndFirstSteps = crud.unionAll(parametersToSearchCommandsAndFirstSteps, JnDeleteKeysFromCache.INSTANCE, 
-				JbEntityBotCommandStepExplanation.ENTITY, 
-				JbEntityBotCommandExplanation.ENTITY, 
-				JbEntityBotCommandStep.ENTITY, 
-				JbEntityBotCommandName.ENTITY, 
-				JbEntityBotCommand.ENTITY 
+				JnEntityBotCommandStepExplanation.ENTITY, 
+				JnEntityBotCommandExplanation.ENTITY, 
+				JnEntityBotCommandStep.ENTITY, 
+				JnEntityBotCommandName.ENTITY, 
+				JnEntityBotCommand.ENTITY 
 				);
 		
 		Map<String, CcpJsonRepresentation> allSteps = new HashMap<>();
-		List<CcpJsonRepresentation> firstSteps = resultFromSearchCommandsAndFirstSteps.getEntityRows(JbEntityBotCommandStep.ENTITY);
+		List<CcpJsonRepresentation> firstSteps = resultFromSearchCommandsAndFirstSteps.getEntityRows(JnEntityBotCommandStep.ENTITY);
 		
 		for (CcpJsonRepresentation firstStep : firstSteps) {
 			String stepName = firstStep.getAsString(JnJsonInstantMessengerFields.stepName);
@@ -149,10 +142,10 @@ public class JbBotEngine {
 						;
 				allSteps.put(stepName, putLanguage);
 			}
-			var nextSteps = firstStep.getAsJsonList(JbEntityBotCommandStep.Fields.stepFlow);
+			var nextSteps = firstStep.getAsJsonList(JnEntityBotCommandStep.Fields.stepFlow);
 			for (CcpJsonRepresentation nextStep : nextSteps) {
 
-				String nextStepName = nextStep.getAsString(JbNextStepFields.nextStep);
+				String nextStepName = nextStep.getAsString(JnNextStepFields.nextStep);
 				String nextStepNameTrim = nextStepName.trim();
 				boolean hasNoNextStep = nextStepNameTrim.isEmpty();
 
@@ -204,15 +197,15 @@ public class JbBotEngine {
 		}
 	
 		CcpSelectUnionAll resultFromSearchAllSteps = crud.unionAll(parametersToSearchAllSteps, JnDeleteKeysFromCache.INSTANCE, 
-				JbEntityBotCommandStepStartMessage.ENTITY, 
-				JbEntityBotCommandStepEndMessage.ENTITY,
-				JbEntityBotCommandExplanation.ENTITY, 
-				JbEntityBotCommandStep.ENTITY 
+				JnEntityBotCommandStepStartMessage.ENTITY, 
+				JnEntityBotCommandStepEndMessage.ENTITY,
+				JnEntityBotCommandExplanation.ENTITY, 
+				JnEntityBotCommandStep.ENTITY 
 				);
 		
 		Map<String, JbBotBusiness> stepsMap = new HashMap<>(); 
 		
-		List<CcpJsonRepresentation> entityRows = resultFromSearchAllSteps.getEntityRows(JbEntityBotCommandStep.ENTITY);
+		List<CcpJsonRepresentation> entityRows = resultFromSearchAllSteps.getEntityRows(JnEntityBotCommandStep.ENTITY);
 		
 		for (CcpJsonRepresentation entityRow : entityRows) {
 			String stepName = entityRow.getAsString(JnJsonInstantMessengerFields.stepName);
@@ -244,19 +237,19 @@ public class JbBotEngine {
 			Stream<String> stepsToVisitStream = stepsToVisit.stream();
 			Stream<CcpJsonRepresentation> parametersStream = stepsToVisitStream.map(stepName -> CcpOtherConstants.EMPTY_JSON.put(JnJsonInstantMessengerFields.stepName, stepName));
 			CcpJsonRepresentation[] parametersToSearchSteps = parametersStream.toArray(CcpJsonRepresentation[]::new);
-			CcpSelectUnionAll foundSteps = crud.unionAll(parametersToSearchSteps, JnDeleteKeysFromCache.INSTANCE, JbEntityBotCommandStep.ENTITY);
-			List<CcpJsonRepresentation> stepRows = foundSteps.getEntityRows(JbEntityBotCommandStep.ENTITY);
+			CcpSelectUnionAll foundSteps = crud.unionAll(parametersToSearchSteps, JnDeleteKeysFromCache.INSTANCE, JnEntityBotCommandStep.ENTITY);
+			List<CcpJsonRepresentation> stepRows = foundSteps.getEntityRows(JnEntityBotCommandStep.ENTITY);
 
 			Set<String> reachedSteps = new HashSet<>();
 
 			for (CcpJsonRepresentation stepRow : stepRows) {
-				String nextStep = stepRow.getAsString(JbEntityBotCommandStep.Fields.nextStep);
+				String nextStep = stepRow.getAsString(JnEntityBotCommandStep.Fields.nextStep);
 				reachedSteps.add(nextStep);
 
-				List<CcpJsonRepresentation> stepFlow = stepRow.getAsJsonList(JbEntityBotCommandStep.Fields.stepFlow);
+				List<CcpJsonRepresentation> stepFlow = stepRow.getAsJsonList(JnEntityBotCommandStep.Fields.stepFlow);
 
 				for (CcpJsonRepresentation flow : stepFlow) {
-					String flowNextStep = flow.getAsString(JbNextStepFields.nextStep);
+					String flowNextStep = flow.getAsString(JnNextStepFields.nextStep);
 					reachedSteps.add(flowNextStep);
 				}
 			}

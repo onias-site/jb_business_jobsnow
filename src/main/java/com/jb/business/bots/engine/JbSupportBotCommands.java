@@ -1,24 +1,17 @@
 package com.jb.business.bots.engine;
 
 /**
- * Catalogs the commands available in the support bot: {@code solveLoginTokenTicket} (login token tickets),
- * {@code fixSkillHierarchy} (review of the skill hierarchy fix requests), {@code allowCommandToUser} (stops
- * ignoring a user for a command), {@code pendingTickets} (goes through the commands the bot sent to the
- * operator that were not run yet) and {@code reviewSkillSuggestion} (review of the skills suggested by the users).
+ * Catalogs the commands of the support bot that belong to jb: {@code solveLoginTokenTicket} (login token tickets) and
+ * {@code pendingTickets} (goes through the commands the bot sent to the operator that were not run yet). The bot also
+ * runs the commands other cost centers seed in {@code JnEntityBotCommand} (vis: skill suggestion, skill hierarchy and
+ * ignored users), which jb does not know: since 2026-10-15 they are found by {@code botName} and their steps run by
+ * class name.
  */
 public enum JbSupportBotCommands {
 
 	/** Solves the login token tickets. */
 	solveLoginTokenTicket,
-	/** Reviews the skill hierarchy fix requests. */
-	fixSkillHierarchy,
-	/** Stops ignoring a user for a command. */
-	allowCommandToUser,
 	/** Goes through the pending tickets. */
 	pendingTickets,
-	/** Reviews the skills suggested by the users. */
-	reviewSkillSuggestion,
-	/** Goes through the users ignored by the support, to stop ignoring them. */
-	ignoredUsers
 	;
 }

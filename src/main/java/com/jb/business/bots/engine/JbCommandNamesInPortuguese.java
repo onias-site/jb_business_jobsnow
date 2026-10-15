@@ -4,22 +4,14 @@ import com.ccp.decorators.CcpJsonFieldName;
 
 /**
  * How each command of the bots is typed in Portuguese (without the {@code /}): the item is the canonical name of the
- * command and {@link #getValue()} its name in Portuguese. Seeded in {@code JbEntityBotCommandName}; the canonical name
+ * command and {@link #getValue()} its name in Portuguese. Seeded in {@code JnEntityBotCommandName}; the canonical name
  * stays valid in every language, and in English it is the name itself.
  */
 public enum JbCommandNamesInPortuguese implements CcpJsonFieldName{
 	/** {@code /solucionarTicketsDeTokenDeLogin}. */
 	solveLoginTokenTicket { public String getValue() { return "solucionarTicketsDeTokenDeLogin"; } },
-	/** {@code /ajustarHierarquiaDeHabilidades}. */
-	fixSkillHierarchy { public String getValue() { return "ajustarHierarquiaDeHabilidades"; } },
-	/** {@code /permitirComandoAoUsuario}. */
-	allowCommandToUser { public String getValue() { return "permitirComandoAoUsuario"; } },
 	/** {@code /ticketsPendentes}. */
 	pendingTickets { public String getValue() { return "ticketsPendentes"; } },
-	/** {@code /avaliarSugestaoDeHabilidade}. */
-	reviewSkillSuggestion { public String getValue() { return "avaliarSugestaoDeHabilidade"; } },
-	/** {@code /listarUsuariosIgnorados}. */
-	ignoredUsers { public String getValue() { return "listarUsuariosIgnorados"; } },
 	/** {@code /idDoChat}. */
 	chatId { public String getValue() { return "idDoChat"; } },
 	/** {@code /mostrarTodosOsComandos}. */

@@ -1,5 +1,6 @@
 package com.jb.business.bots.pending.tickets;
 
+import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import java.util.List;
 
 import com.ccp.business.CcpBusiness;
@@ -32,7 +33,7 @@ public class JbSupportPendingTicketsShow implements CcpBusiness {
 
 		String listText = JbSupportPendingTicketsList.getListText(language, tickets);
 		String firstTicket = tickets.get(0);
-		CcpJsonRepresentation jsonWithReply = json.put(JbSupportPendingTicketsFields.botReply, listText);
+		CcpJsonRepresentation jsonWithReply = json.put(JnJsonInstantMessengerFields.botReply, listText);
 		CcpJsonRepresentation jsonWithTheTicket = jsonWithReply.put(JbSupportPendingTicketsFields.currentTicket, firstTicket);
 		return jsonWithTheTicket;
 	}

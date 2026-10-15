@@ -51,12 +51,12 @@ final class PendingTicket {
 		JnEntitySupportPendingCommand.ENTITY.delete(pendingCommand);
 
 		// a command started from another list (/ignoredUsers) shows that list again, without the flag, for the same reason
-		String listToShowAgain = stepInput.getAsString(JbBotEngineFields.listToShowAgain);
+		String listToShowAgain = stepInput.getAsString(JnJsonInstantMessengerFields.listToShowAgain);
 		boolean startedFromAnotherList = false == listToShowAgain.isEmpty();
 
 		if(startedFromAnotherList) {
-			CcpJsonRepresentation resultWithoutTheList = result.removeFields(JbBotEngineFields.listToShowAgain);
-			CcpJsonRepresentation resultShowingTheOtherListAgain = resultWithoutTheList.put(JbBotEngineFields.typedValueToRedirect, listToShowAgain);
+			CcpJsonRepresentation resultWithoutTheList = result.removeFields(JnJsonInstantMessengerFields.listToShowAgain);
+			CcpJsonRepresentation resultShowingTheOtherListAgain = resultWithoutTheList.put(JnJsonInstantMessengerFields.typedValueToRedirect, listToShowAgain);
 			return resultShowingTheOtherListAgain;
 		}
 
@@ -70,7 +70,7 @@ final class PendingTicket {
 		// the list would show the list again
 		String pendingTicketsCommand = "/" + JbSupportBotCommands.pendingTickets;
 		CcpJsonRepresentation resultWithoutTheFlag = result.removeFields(JbBotEngineFields.ticketFromTheList);
-		CcpJsonRepresentation resultShowingTheListAgain = resultWithoutTheFlag.put(JbBotEngineFields.typedValueToRedirect, pendingTicketsCommand);
+		CcpJsonRepresentation resultShowingTheListAgain = resultWithoutTheFlag.put(JnJsonInstantMessengerFields.typedValueToRedirect, pendingTicketsCommand);
 		return resultShowingTheListAgain;
 	}
 }

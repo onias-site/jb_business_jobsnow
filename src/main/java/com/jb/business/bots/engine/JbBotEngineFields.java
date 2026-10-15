@@ -10,20 +10,13 @@ import com.ccp.decorators.CcpJsonFieldName;
  * ticket leaves the list of pending tickets.</li>
  * <li>{@code ticketFromTheList}: the command was started from the {@code /pendingTickets} list, so when it
  * finishes the list is shown again.</li>
- * <li>{@code typedValueToRedirect}: text a step asks the bot to handle next, as if the operator had typed it; this
- * is how a step hands the conversation over to another command.</li>
  * </ul>
+ * The fields a step of another cost center may use to talk to the engine ({@code botReply}, {@code typedValueToRedirect}
+ * and {@code listToShowAgain}) are in {@code JnJsonInstantMessengerFields} since 2026-10-15, so that vis does not import jb.
  */
 public enum JbBotEngineFields implements CcpJsonFieldName{
 	/** The {@code pendingTicket} field. */
 	pendingTicket,
 	/** The {@code ticketFromTheList} field. */
 	ticketFromTheList,
-	/** The {@code typedValueToRedirect} field. */
-	typedValueToRedirect,
-	/**
-	 * The {@code listToShowAgain} field: the list command (as typed, with the {@code /}) to show again when the command
-	 * started from it finishes, as {@link #ticketFromTheList} does for {@code /pendingTickets}.
-	 */
-	listToShowAgain
 }

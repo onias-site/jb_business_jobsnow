@@ -15,12 +15,12 @@ import com.ccp.decorators.CcpStringDecorator;
 import com.ccp.especifications.db.crud.CcpSelectUnionAll;
 import com.ccp.flow.CcpErrorFlowDisturb;
 import com.ccp.json.validations.global.engine.CcpJsonValidationError;
-import com.jb.entities.JbEntityBotCommandStep;
-import com.jb.entities.JbEntityBotCommandStepEndMessage;
-import com.jb.entities.JbEntityBotCommandStepExplanation;
+import com.jn.entities.JnEntityBotCommandStep;
+import com.jn.entities.JnEntityBotCommandStepEndMessage;
+import com.jn.entities.JnEntityBotCommandStepExplanation;
 import com.jb.entities.JbEntityBotCommandStepSession;
-import com.jb.entities.JbEntityBotCommandStepStartMessage;
-import com.jb.entities.subfields.JbNextStepFields;
+import com.jn.entities.JnEntityBotCommandStepStartMessage;
+import com.jn.entities.subfields.JnNextStepFields;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
@@ -63,7 +63,7 @@ class BotCommandStep implements JbBotBusiness{
 	 */
 	private static CcpBusiness loadEngine(String name, CcpSelectUnionAll result) {
 		
-		String engineName = loadFieldValue(name, result, JbEntityBotCommandStep.Fields.engine);
+		String engineName = loadFieldValue(name, result, JnEntityBotCommandStep.Fields.engine);
 		String engineNameTrim = engineName.trim();
 
 		boolean hasNoEngine = engineNameTrim.isEmpty();
@@ -88,10 +88,10 @@ class BotCommandStep implements JbBotBusiness{
 		this.name = name;
 		this.engine = engine;
 		this.flow = this.loadFlow(name, result);
-		this.endMessages = result.getEntityRows(JbEntityBotCommandStepEndMessage.ENTITY);
-		this.nextStep = loadFieldValue(name, result, JbEntityBotCommandStep.Fields.nextStep);
-		this.startMessages = result.getEntityRows(JbEntityBotCommandStepStartMessage.ENTITY);
-		this.explanations = this.loadLabelsWithLanguages(name, result, JbEntityBotCommandStepExplanation.ENTITY, JnJsonInstantMessengerFields.stepName);
+		this.endMessages = result.getEntityRows(JnEntityBotCommandStepEndMessage.ENTITY);
+		this.nextStep = loadFieldValue(name, result, JnEntityBotCommandStep.Fields.nextStep);
+		this.startMessages = result.getEntityRows(JnEntityBotCommandStepStartMessage.ENTITY);
+		this.explanations = this.loadLabelsWithLanguages(name, result, JnEntityBotCommandStepExplanation.ENTITY, JnJsonInstantMessengerFields.stepName);
 	}
 
 	/**
@@ -134,7 +134,7 @@ class BotCommandStep implements JbBotBusiness{
 	private Map<Integer, CcpJsonRepresentation> loadFlow(String name, CcpSelectUnionAll result) {
 		Map<Integer, CcpJsonRepresentation> stepFlow = new HashMap<>();
 		CcpJsonRepresentation entityRow = getEntityRow(name, result);
-		List<CcpJsonRepresentation> allNextSteps = entityRow.getAsJsonList(JbEntityBotCommandStep.Fields.stepFlow);
+		List<CcpJsonRepresentation> allNextSteps = entityRow.getAsJsonList(JnEntityBotCommandStep.Fields.stepFlow);
 		for (CcpJsonRepresentation json : allNextSteps) {
 			Integer status = json.getAsIntegerNumber(JnJsonCommonsFields.status);
 			stepFlow.put(status, json);
@@ -151,7 +151,7 @@ class BotCommandStep implements JbBotBusiness{
 	private static CcpJsonRepresentation getEntityRow(String name, CcpSelectUnionAll result) {
 		CcpJsonRepresentation parametersToSearch = CcpOtherConstants.EMPTY_JSON.put(JnJsonInstantMessengerFields.stepName, name);
 		Supplier<CcpJsonRepresentation> jsonSupplier = parametersToSearch.getJsonSupplier();
-		CcpJsonRepresentation entityRow = JbEntityBotCommandStep.ENTITY.getRecordFromUnionAll(result, jsonSupplier);
+		CcpJsonRepresentation entityRow = JnEntityBotCommandStep.ENTITY.getRecordFromUnionAll(result, jsonSupplier);
 		return entityRow;
 	}
 	
@@ -228,7 +228,7 @@ class BotCommandStep implements JbBotBusiness{
 				return execute;
 			}
 
-			List<CcpJsonRepresentation> messages = flow.getAsJsonList(JbNextStepFields.message);
+			List<CcpJsonRepresentation> messages = flow.getAsJsonList(JnNextStepFields.message);
 			// the flow message is resolved with what the engine had produced when it diverted the flow, so a
 			// message can carry values calculated by the engine, and not only the ones that arrived at the step
 			CcpJsonRepresentation jsonWithWhatTheEngineProduced = json.mergeWithAnotherJson(e.json);
@@ -239,7 +239,7 @@ class BotCommandStep implements JbBotBusiness{
 			.orElseGet(copy.getJsonSupplier())
 			;
 			
-			String nextStepName = flow.getAsString(JbNextStepFields.nextStep);
+			String nextStepName = flow.getAsString(JnNextStepFields.nextStep);
 			
 			boolean hasNoNextStep = nextStepName.isEmpty();
 		

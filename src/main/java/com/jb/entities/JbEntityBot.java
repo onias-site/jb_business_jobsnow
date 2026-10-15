@@ -1,13 +1,11 @@
 package com.jb.entities;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.ccp.constants.CcpOtherConstants;
-import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpJsonFieldName;
+import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.especifications.db.bulk.CcpBulkItem;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCache;
@@ -17,28 +15,33 @@ import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityFactor
 import com.ccp.especifications.db.utils.entity.decorators.interfaces.CcpEntityConfigurator;
 import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityFieldPrimaryKey;
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
-import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorArray;
-import com.ccp.json.validations.fields.annotations.CcpJsonFieldValidatorRequired;
+import com.ccp.process.CcpProcessStatusDefault;
 import com.jb.business.bots.engine.JbBotType;
+import com.jb.business.bots.engine.JbCommandNamesInPortuguese;
 import com.jb.business.bots.engine.JbDefaultBotCommandMessages;
 import com.jb.business.bots.engine.JbLanguageNames;
 import com.jb.business.bots.engine.JbSupportBotCommands;
+import com.jb.business.bots.login.token.JbSupportLoginToken;
 import com.jb.business.bots.login.token.JbSupportLoginTokenTypes;
-import com.jb.business.bots.ignored.users.JbSupportIgnoredUsersMessages;
+import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsChoose;
 import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsMessages;
-import com.jb.business.bots.skill.hierarchy.JbSupportSkillFixHierarchyMessages;
-import com.jb.business.bots.skill.suggestion.JbSupportSkillSuggestionMessages;
+import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsShow;
+import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsStatus;
+import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsSteps;
+import com.jn.business.bots.JnBotConfigurationSeeds;
+import com.jn.entities.JnEntityBotCommandStep;
+import com.jn.entities.JnEntityBotCommandStepEndMessage;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
+import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
-import com.jn.messages.JnSystemMessage;
 import com.jn.utils.JnLanguage;
-import com.vis.business.skill.VisSkillFixHierarchyDecisions;
-import com.vis.json.fields.validation.VisSkillFixHierarchyTypes;
-
-import java.util.stream.Stream;
 
 /**
- * A bot of the platform and the names of its  commands, by language. Read once by {@code JbBotEngine} when it starts.
+ * A bot of the platform. Seeds the support bot and the part of its configuration that belongs to jb: the commands
+ * {@code solveLoginTokenTicket} and {@code pendingTickets}, the Portuguese names of the default commands and the texts of
+ * the engine. The commands themselves are records of {@code JnEntityBotCommand}, found by {@code botName} when the bot
+ * starts; the other cost centers seed theirs (vis seeds the skill and ignored users commands), and jb does not know them.
+ * Until 2026-10-15 this entity kept the list of the commands of the bot, seeded only by jb, which made jb import vis.
  * <p>
  * Configuration:
  * <ul>
@@ -53,7 +56,7 @@ public class JbEntityBot implements CcpEntityConfigurator {
 
 	/** The entity {@code jb_bot}, with every decorator of this configuration. */
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBot.class).entityInstance;
-	
+
 	/**
 	 * The fields of the entity, with their validation rules (this enum is the class named by
 	 * {@code @CcpEntityFieldsValidator}).
@@ -62,345 +65,142 @@ public class JbEntityBot implements CcpEntityConfigurator {
 		/** The {@code botName} field: part of the primary key, validated as in {@code JnJsonInstantMessengerFields}. */
 		@CcpEntityFieldPrimaryKey
 		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
-		botName, 
-
-		/** The {@code commandName} field: required, list, validated as in {@code JnJsonInstantMessengerFields}. */
-		@CcpJsonFieldValidatorRequired
-		@CcpJsonFieldValidatorArray(minSize = 1)
-		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
-		commandName
+		botName,
 		;
 	}
-	
-	
+
+
 	/**
-	 * Seeds the support bot with every command of {@code JbSupportBotCommands}, the templates of the login token ticket
-	 * notices and the system messages of the support bot (Portuguese and English).
+	 * Seeds the support bot, the configuration of the commands of jb, the templates of the login token ticket notices
+	 * and the texts of the support bot that belong to jb (Portuguese and English).
 	 * @return the seed records
 	 */
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
-		JbSupportBotCommands[] jbSupportBotCommandsValues = JbSupportBotCommands.values();
-		Stream<JbSupportBotCommands> stream = Arrays.asList(jbSupportBotCommandsValues).stream();
-		var streamMap = stream.map(x -> x.name());
+		CcpJsonRepresentation supportBot = CcpOtherConstants.EMPTY_JSON.put(JnJsonInstantMessengerFields.botName, JbBotType.support);
+		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(ENTITY, supportBot);
+		List<CcpBulkItem> firstRecords = new ArrayList<>(createBulkItems);
 
-		List<String> commandName = streamMap.collect(Collectors.toList());
-		CcpJsonRepresentation put = CcpOtherConstants.EMPTY_JSON
-		.put(JnJsonInstantMessengerFields.botName, JbBotType.support);
-
-		CcpJsonRepresentation supportBot = put
-		.put(JnJsonInstantMessengerFields.commandName, commandName)
-		;
-		
-		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(
-				ENTITY
-				,supportBot
-				);
-		ArrayList<CcpBulkItem> arrayList = new ArrayList<>(createBulkItems);
 		JbSupportLoginTokenTypes[] values = JbSupportLoginTokenTypes.values();
-		
 		for (JbSupportLoginTokenTypes value : values) {
 			List<CcpBulkItem> instantMessageTemplate = value.getInstantMessageTemplate();
-			arrayList.addAll(instantMessageTemplate);
+			firstRecords.addAll(instantMessageTemplate);
 		}
 
-		List<CcpBulkItem> systemMessages = this.getSystemMessages();
-		arrayList.addAll(systemMessages);
+		JnBotConfigurationSeeds seeds = new JnBotConfigurationSeeds(JbBotType.support);
+		JnBotConfigurationSeeds withLoginToken = this.addSolveLoginTokenTicket(seeds);
+		JnBotConfigurationSeeds withPendingTickets = this.addPendingTickets(withLoginToken);
+		JnBotConfigurationSeeds withEngineTexts = this.addEngineTexts(withPendingTickets);
+		JbCommandNamesInPortuguese[] commandNamesInPortuguese = JbCommandNamesInPortuguese.values();
+		JnBotConfigurationSeeds withNames = withEngineTexts.portugueseNames(commandNamesInPortuguese);
+		List<CcpBulkItem> botItems = withNames.getBulkItems();
+		firstRecords.addAll(botItems);
 
-		return arrayList;
+		return firstRecords;
 	}
 
 	/**
-	 * Texts of the support bot conversations, one {@link JnEntitySystemMessage} record per item and language: the
-	 * descriptions of {@link VisSkillFixHierarchyTypes}, the group titles of {@link VisSkillFixHierarchyDecisions}
-	 * and the texts of {@link JbSupportSkillFixHierarchyMessages} (each {@code {field}} of a template is filled when
-	 * the text is read).
+	 * {@code /solveLoginTokenTicket <ticketType> <email>}, with its explanation; without an open ticket of the type, the
+	 * session ends with a notice to the operator.
+	 * @param seeds the seeds so far
+	 * @return the seeds with the command
 	 */
-	private List<CcpBulkItem> getSystemMessages() {
-		List<CcpBulkItem> systemMessages = new ArrayList<>();
+	private JnBotConfigurationSeeds addSolveLoginTokenTicket(JnBotConfigurationSeeds seeds) {
+		String commandName = JbSupportBotCommands.solveLoginTokenTicket.name();
+		String email = "{" + JnJsonCommonsFields.email + "}";
+		String ticketType = "{" + JbSupportLoginToken.JsonFields.ticketType + "}";
 
-		this.addSystemMessage(systemMessages, VisSkillFixHierarchyTypes.add, "associação", "association");
-		this.addSystemMessage(systemMessages, VisSkillFixHierarchyTypes.remove, "desassociação", "dissociation");
+		CcpJsonRepresentation portuguese = JnEntityBotCommandStep.getStepFlowMessage(JnLanguage.portuguese, "O e-mail '" + email + "' não possui aberto ticket do tipo '" + ticketType + "'");
+		CcpJsonRepresentation english = JnEntityBotCommandStep.getStepFlowMessage(JnLanguage.english, "The e-mail '" + email + "' has no open ticket of the type '" + ticketType + "'");
+		CcpJsonRepresentation spanish = JnEntityBotCommandStep.getStepFlowMessage(JnLanguage.spanish, "El correo '" + email + "' no tiene ticket abierto del tipo '" + ticketType + "'");
+		CcpJsonRepresentation stepFlow = JnEntityBotCommandStep.getStepFlow(CcpProcessStatusDefault.NOT_FOUND.status, "", portuguese, english, spanish);
+		CcpJsonRepresentation step = JnEntityBotCommandStep.getBotCommandStep(commandName, JbSupportLoginToken.class, "", stepFlow);
 
-		this.addSystemMessage(systemMessages, VisSkillFixHierarchyDecisions.approved, "Itens aprovados", "Approved items");
-		this.addSystemMessage(systemMessages, VisSkillFixHierarchyDecisions.rejected, "Itens reprovados", "Rejected items");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.options
-				, "Responda com uma das opções:\n"
-				+ "• aprovar <justificativa> — aprova todos os itens pendentes\n"
-				+ "• rejeitar <justificativa> — rejeita todos os itens pendentes\n"
-				+ "• um a um — decide item por item\n"
-				+ "• ignorar — descarta a solicitação e ignora as próximas deste usuário em todos os comandos"
-				, "Answer with one of the options:\n"
-				+ "• approve <justification> — approves all the pending items\n"
-				+ "• reject <justification> — rejects all the pending items\n"
-				+ "• one by one — decides item by item\n"
-				+ "• ignore — discards the request and ignores the next ones of this user in every command");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.ignoreConfirmation
-				, "Confirma que o usuário {email} será ignorado pelo suporte, em todos os comandos? "
-				+ "Esta solicitação será descartada sem aviso ao usuário e as próximas não chegarão mais a você.\n"
-				+ "Responda: sim ou não"
-				, "Do you confirm that the user {email} will be ignored by the support, in every command? "
-				+ "This request will be discarded without notifying the user and the next ones will no longer reach you.\n"
-				+ "Answer: yes or no");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.previousDecisionApproved
-				, "item já aprovado em revisão anterior"
-				, "item already approved in an earlier review");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.previousDecisionRejected
-				, "item já reprovado em revisão anterior"
-				, "item already rejected in an earlier review");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.notUnderstood
-				, "Não entendi a resposta. Toda decisão precisa vir acompanhada de uma justificativa.\n\n"
-				, "I did not understand the answer. Every decision needs to come with a justification.\n\n");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.itemPrompt
-				, "Item {itemNumber} de {itemsCount}: {skill} ({typeDescription} com o termo {parent})\n"
-				+ "Responda: aprovar <justificativa> ou rejeitar <justificativa>"
-				, "Item {itemNumber} of {itemsCount}: {skill} ({typeDescription} with the term {parent})\n"
-				+ "Answer: approve <justification> or reject <justification>");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.reviewFinished
-				, "Revisão concluída para {email} / {parent}.\n"
-				+ "Aprovados: {approvedSkills}\n"
-				+ "Reprovados: {rejectedSkills}\n"
-				+ "O usuário será avisado por e-mail."
-				, "Review finished for {email} / {parent}.\n"
-				+ "Approved: {approvedSkills}\n"
-				+ "Rejected: {rejectedSkills}\n"
-				+ "The user will be notified by email.");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.noSkill, "-", "-");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.userIgnored
-				, "O usuário {email} foi ignorado pelo suporte, em todos os comandos. A solicitação para o termo {parent} foi descartada."
-				, "The user {email} was ignored by the support, in every command. The request for the term {parent} was discarded.");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.ignoreCanceled
-				, "O usuário não será ignorado.\n\n{options}"
-				, "The user will not be ignored.\n\n{options}");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.ignoreConfirmationNotUnderstood
-				, "Não entendi a resposta.\n\n{ignoreConfirmation}"
-				, "I did not understand the answer.\n\n{ignoreConfirmation}");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.requestHeader
-				, "Solicitação de {typeDescription} de {email} para o termo {parent}\n\n"
-				, "Request of {typeDescription} from {email} for the term {parent}\n\n");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.requestTypeJustification
-				, "[{typeDescription}]\nJustificativa do usuário: {description}\n"
-				, "[{typeDescription}]\nUser's justification: {description}\n");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.pendingItems
-				, "Itens pendentes: {skills}\n"
-				, "Pending items: {skills}\n");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.approvedBefore
-				, "Já aprovados anteriormente (não serão perguntados): {skills}\n"
-				, "Already approved before (will not be asked): {skills}\n");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.rejectedBefore
-				, "Já reprovados anteriormente (não serão perguntados): {skills}\n"
-				, "Already rejected before (will not be asked): {skills}\n");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillFixHierarchyMessages.requestWithdrawn
-				, "O usuário {email} desistiu da solicitação de {typeDescription} com o termo {parent} enquanto ela era avaliada. "
-				+ "A avaliação foi encerrada e as decisões tomadas até aqui foram descartadas."
-				, "The user {email} withdrew the {typeDescription} request with the term {parent} while it was being reviewed. "
-				+ "The review was ended and the decisions taken so far were discarded.");
-
-		List<CcpBulkItem> pendingTicketsMessages = this.getPendingTicketsMessages();
-		systemMessages.addAll(pendingTicketsMessages);
-
-		List<CcpBulkItem> ignoredUsersMessages = this.getIgnoredUsersMessages();
-		systemMessages.addAll(ignoredUsersMessages);
-
-		List<CcpBulkItem> skillSuggestionMessages = this.getSkillSuggestionMessages();
-		systemMessages.addAll(skillSuggestionMessages);
-
-		this.addSystemMessage(systemMessages, JbDefaultBotCommandMessages.commandExited
-				, "Você saiu do comando {commandName}. Agora você pode executar outro comando."
-				, "You left the command {commandName}. Now you can run another command.");
-
-		this.addSystemMessage(systemMessages, JbDefaultBotCommandMessages.languageSet
-				, "Idioma definido: {languageName}."
-				, "Language set: {languageName}.");
-
-		this.addSystemMessage(systemMessages, JbDefaultBotCommandMessages.chooseLanguage
-				, "Seu idioma atual é {languageName}. Para trocar, digite {commandName} seguido de um destes idiomas: {languages}"
-				, "Your current language is {languageName}. To change it, type {commandName} followed by one of these languages: {languages}");
-
-		this.addSystemMessage(systemMessages, JbDefaultBotCommandMessages.unknownLanguage
-				, "Idioma não reconhecido: {typedLanguage}. Digite {commandName} seguido de um destes idiomas: {languages}"
-				, "Unknown language: {typedLanguage}. Type {commandName} followed by one of these languages: {languages}");
-
-		this.addSystemMessage(systemMessages, JbLanguageNames.portuguese, "português", "Portuguese");
-		this.addSystemMessage(systemMessages, JbLanguageNames.english, "inglês", "English");
-		this.addSystemMessage(systemMessages, JbLanguageNames.spanish, "espanhol", "Spanish");
-
-		return systemMessages;
+		JnBotConfigurationSeeds withCommand = seeds
+				.command(commandName, JbSupportLoginToken.JsonFields.ticketType, JnJsonCommonsFields.email)
+				.steps(step)
+				.commandExplanation(commandName, JnLanguage.portuguese, "Quando o usuário alega que seu token de login está bloqueado ou não foi enviado, ele abre uma solicitação que é recebida pelo time de suporte, então o operador de suporte evoca este comando para solucionar a solicitação que o usuário abriu")
+				.commandExplanation(commandName, JnLanguage.english, "When the user claims that their login token is locked or was not sent, they open a request that the support team receives, then the support operator invokes this command to solve the request the user opened");
+		return withCommand;
 	}
 
 	/**
-	 * Texts of the {@code reviewSkillSuggestion} command ({@link JbSupportSkillSuggestionMessages}).
+	 * {@code /pendingTickets}: shows how many tickets the operator has and the oldest one, and goes on to the choice
+	 * between solving it (ending the session, after which the bot starts the command of the ticket) and going to the
+	 * next one. Without any ticket the session ends with that notice; an answer not understood repeats the choice.
+	 * @param seeds the seeds so far
+	 * @return the seeds with the command
 	 */
-	private List<CcpBulkItem> getSkillSuggestionMessages() {
-		List<CcpBulkItem> systemMessages = new ArrayList<>();
+	private JnBotConfigurationSeeds addPendingTickets(JnBotConfigurationSeeds seeds) {
+		String commandName = JbSupportBotCommands.pendingTickets.name();
+		String choose = JbSupportPendingTicketsSteps.pendingTicketsChoose.name();
+		CcpJsonRepresentation[] botReply = JnEntityBotCommandStep.getBotReplyInEveryLanguage();
 
-		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.request
-				, "Sugestão de habilidade de {email}\n\n"
-				+ "Habilidade: {skill}\n"
-				+ "Sinônimos: {synonymNames}\n"
-				+ "Justificativa do usuário: {description}\n\n"
-				+ "{options}"
-				, "Skill suggestion from {email}\n\n"
-				+ "Skill: {skill}\n"
-				+ "Synonyms: {synonymNames}\n"
-				+ "User's justification: {description}\n\n"
-				+ "{options}");
+		int noPendingTicket = JbSupportPendingTicketsStatus.noPendingTicket.asNumber();
+		CcpJsonRepresentation noPendingTicketFlowOfTheList = JnEntityBotCommandStep.getStepFlow(noPendingTicket, "", botReply);
+		CcpJsonRepresentation showStep = JnEntityBotCommandStep.getBotCommandStep(commandName, JbSupportPendingTicketsShow.class, choose, noPendingTicketFlowOfTheList);
 
-		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.options
-				, "Responda com uma das opções:\n"
-				+ "• aprovar <justificativa> — aprova a habilidade, que passa a ser reconhecida nos currículos\n"
-				+ "• rejeitar <justificativa> — rejeita a habilidade\n"
-				+ "• ignorar — descarta a sugestão e ignora as próximas deste usuário em todos os comandos\n"
-				+ "A justificativa vai para o usuário e precisa ter de 10 a 500 caracteres."
-				, "Answer with one of the options:\n"
-				+ "• approve <justification> — approves the skill, which starts being recognized in the resumes\n"
-				+ "• reject <justification> — rejects the skill\n"
-				+ "• ignore — discards the suggestion and ignores the next ones of this user in every command\n"
-				+ "The justification goes to the user and needs 10 to 500 characters.");
+		int invalidAnswer = JbSupportPendingTicketsStatus.invalidAnswer.asNumber();
+		int ticketChosen = JbSupportPendingTicketsStatus.ticketChosen.asNumber();
+		CcpJsonRepresentation invalidAnswerFlow = JnEntityBotCommandStep.getStepFlow(invalidAnswer, choose, botReply);
+		CcpJsonRepresentation noPendingTicketFlow = JnEntityBotCommandStep.getStepFlow(noPendingTicket, "", botReply);
+		CcpJsonRepresentation ticketChosenFlow = JnEntityBotCommandStep.getStepFlow(ticketChosen, "", botReply);
+		CcpJsonRepresentation chooseStep = JnEntityBotCommandStep.getBotCommandStep(choose, JbSupportPendingTicketsChoose.class, choose, invalidAnswerFlow, noPendingTicketFlow, ticketChosenFlow);
 
-		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.notUnderstood
-				, "Não entendi a resposta. Toda decisão precisa vir acompanhada de uma justificativa de 10 a 500 caracteres.\n\n{options}"
-				, "I did not understand the answer. Every decision needs to come with a justification of 10 to 500 characters.\n\n{options}");
+		List<CcpJsonRepresentation> endMessages = JnEntityBotCommandStepEndMessage.getBotReplyEndMessages(commandName, choose);
 
-		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.approved
-				, "A habilidade {skill} sugerida por {email} foi aprovada. O usuário será avisado por e-mail."
-				, "The skill {skill} suggested by {email} was approved. The user will be notified by email.");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.rejected
-				, "A habilidade {skill} sugerida por {email} foi rejeitada. O usuário será avisado por e-mail."
-				, "The skill {skill} suggested by {email} was rejected. The user will be notified by email.");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.ignoreConfirmation
-				, "Confirma que o usuário {email} será ignorado pelo suporte, em todos os comandos? "
-				+ "Esta sugestão será descartada sem aviso ao usuário e as próximas não chegarão mais a você.\n"
-				+ "Responda: sim ou não"
-				, "Do you confirm that the user {email} will be ignored by the support, in every command? "
-				+ "This suggestion will be discarded without notifying the user and the next ones will no longer reach you.\n"
-				+ "Answer: yes or no");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.ignoreConfirmationNotUnderstood
-				, "Não entendi a resposta.\n\n{ignoreConfirmation}"
-				, "I did not understand the answer.\n\n{ignoreConfirmation}");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.ignoreCanceled
-				, "O usuário não será ignorado.\n\n{options}"
-				, "The user will not be ignored.\n\n{options}");
-
-		this.addSystemMessage(systemMessages, JbSupportSkillSuggestionMessages.userIgnored
-				, "O usuário {email} foi ignorado pelo suporte, em todos os comandos. A sugestão da habilidade {skill} foi descartada."
-				, "The user {email} was ignored by the support, in every command. The suggestion of the skill {skill} was discarded.");
-
-		return systemMessages;
+		JnBotConfigurationSeeds withCommand = seeds
+				.command(commandName)
+				.steps(showStep, chooseStep)
+				.endMessages(endMessages)
+				.systemMessage(JbSupportPendingTicketsMessages.oneTicket
+						, "Você tem 1 ticket para resolver"
+						, "You have 1 ticket to solve")
+				.systemMessage(JbSupportPendingTicketsMessages.manyTickets
+						, "Você tem {ticketsCount} tickets para resolver"
+						, "You have {ticketsCount} tickets to solve")
+				.systemMessage(JbSupportPendingTicketsMessages.ticketPrompt
+						, "Ticket {ticketNumber} de {ticketsCount} => {ticket}\n"
+						+ "Digite \"1\" para resolver ou \"2\" para ir ao próximo"
+						, "Ticket {ticketNumber} of {ticketsCount} => {ticket}\n"
+						+ "Type \"1\" to solve it or \"2\" to go to the next one")
+				.systemMessage(JbSupportPendingTicketsMessages.noPendingTicket
+						, "Você não tem tickets para resolver."
+						, "You have no tickets to solve.")
+				.systemMessage(JbSupportPendingTicketsMessages.notUnderstood
+						, "Não entendi a resposta.\n\n"
+						, "I did not understand the answer.\n\n")
+				.systemMessage(JbSupportPendingTicketsMessages.ticketAlreadySolved
+						, "O ticket {ticket} já foi resolvido.\n\n"
+						, "The ticket {ticket} was already solved.\n\n")
+				.systemMessage(JbSupportPendingTicketsMessages.ticketChosen
+						, "Resolvendo o ticket {ticket}"
+						, "Solving the ticket {ticket}");
+		return withCommand;
 	}
 
 	/**
-	 * Texts of the {@code pendingTickets} command ({@link JbSupportPendingTicketsMessages}).
+	 * The texts of the default commands of every bot and the names of the languages.
+	 * @param seeds the seeds so far
+	 * @return the seeds with the texts
 	 */
-	private List<CcpBulkItem> getPendingTicketsMessages() {
-		List<CcpBulkItem> systemMessages = new ArrayList<>();
-
-		this.addSystemMessage(systemMessages, JbSupportPendingTicketsMessages.oneTicket
-				, "Você tem 1 ticket para resolver"
-				, "You have 1 ticket to solve");
-
-		this.addSystemMessage(systemMessages, JbSupportPendingTicketsMessages.manyTickets
-				, "Você tem {ticketsCount} tickets para resolver"
-				, "You have {ticketsCount} tickets to solve");
-
-		this.addSystemMessage(systemMessages, JbSupportPendingTicketsMessages.ticketPrompt
-				, "Ticket {ticketNumber} de {ticketsCount} => {ticket}\n"
-				+ "Digite \"1\" para resolver ou \"2\" para ir ao próximo"
-				, "Ticket {ticketNumber} of {ticketsCount} => {ticket}\n"
-				+ "Type \"1\" to solve it or \"2\" to go to the next one");
-
-		this.addSystemMessage(systemMessages, JbSupportPendingTicketsMessages.noPendingTicket
-				, "Você não tem tickets para resolver."
-				, "You have no tickets to solve.");
-
-		this.addSystemMessage(systemMessages, JbSupportPendingTicketsMessages.notUnderstood
-				, "Não entendi a resposta.\n\n"
-				, "I did not understand the answer.\n\n");
-
-		this.addSystemMessage(systemMessages, JbSupportPendingTicketsMessages.ticketAlreadySolved
-				, "O ticket {ticket} já foi resolvido.\n\n"
-				, "The ticket {ticket} was already solved.\n\n");
-
-		this.addSystemMessage(systemMessages, JbSupportPendingTicketsMessages.ticketChosen
-				, "Resolvendo o ticket {ticket}"
-				, "Solving the ticket {ticket}");
-
-		return systemMessages;
-	}
-
-	/**
-	 * Texts of the {@code ignoredUsers} command ({@link JbSupportIgnoredUsersMessages}).
-	 */
-	private List<CcpBulkItem> getIgnoredUsersMessages() {
-		List<CcpBulkItem> systemMessages = new ArrayList<>();
-
-		this.addSystemMessage(systemMessages, JbSupportIgnoredUsersMessages.oneUser
-				, "O suporte está ignorando 1 usuário"
-				, "The support is ignoring 1 user");
-
-		this.addSystemMessage(systemMessages, JbSupportIgnoredUsersMessages.manyUsers
-				, "O suporte está ignorando {usersCount} usuários"
-				, "The support is ignoring {usersCount} users");
-
-		this.addSystemMessage(systemMessages, JbSupportIgnoredUsersMessages.userPrompt
-				, "Usuário {userNumber} de {usersCount} => {email}\n"
-				+ "Ignorado no comando {commandName} ({request})\n"
-				+ "Digite \"1\" para voltar a atendê-lo ou \"2\" para ir ao próximo"
-				, "User {userNumber} of {usersCount} => {email}\n"
-				+ "Ignored in the command {commandName} ({request})\n"
-				+ "Type \"1\" to review their requests again or \"2\" to go to the next one");
-
-		this.addSystemMessage(systemMessages, JbSupportIgnoredUsersMessages.noIgnoredUser
-				, "O suporte não está ignorando nenhum usuário."
-				, "The support is not ignoring any user.");
-
-		this.addSystemMessage(systemMessages, JbSupportIgnoredUsersMessages.notUnderstood
-				, "Não entendi a resposta.\n\n"
-				, "I did not understand the answer.\n\n");
-
-		this.addSystemMessage(systemMessages, JbSupportIgnoredUsersMessages.userAlreadyAllowed
-				, "O usuário {email} já não é mais ignorado.\n\n"
-				, "The user {email} is no longer ignored.\n\n");
-
-		this.addSystemMessage(systemMessages, JbSupportIgnoredUsersMessages.userChosen
-				, "Voltando a atender o usuário {email}"
-				, "Reviewing the requests of the user {email} again");
-
-		return systemMessages;
-	}
-
-	/**
-	 * Adds the Portuguese and English records of a system message.
-	 * @param systemMessages the records so far
-	 * @param systemMessage the system message
-	 * @param portugueseText the Portuguese text
-	 * @param englishText the English text
-	 */
-	private void addSystemMessage(List<CcpBulkItem> systemMessages, JnSystemMessage systemMessage, String portugueseText, String englishText) {
-		List<CcpBulkItem> inPortuguese = systemMessage.toBulkItems(JnLanguage.portuguese, portugueseText);
-		List<CcpBulkItem> inEnglish = systemMessage.toBulkItems(JnLanguage.english, englishText);
-		systemMessages.addAll(inPortuguese);
-		systemMessages.addAll(inEnglish);
+	private JnBotConfigurationSeeds addEngineTexts(JnBotConfigurationSeeds seeds) {
+		JnBotConfigurationSeeds withTexts = seeds
+				.systemMessage(JbDefaultBotCommandMessages.commandExited
+						, "Você saiu do comando {commandName}. Agora você pode executar outro comando."
+						, "You left the command {commandName}. Now you can run another command.")
+				.systemMessage(JbDefaultBotCommandMessages.languageSet
+						, "Idioma definido: {languageName}."
+						, "Language set: {languageName}.")
+				.systemMessage(JbDefaultBotCommandMessages.chooseLanguage
+						, "Seu idioma atual é {languageName}. Para trocar, digite {commandName} seguido de um destes idiomas: {languages}"
+						, "Your current language is {languageName}. To change it, type {commandName} followed by one of these languages: {languages}")
+				.systemMessage(JbDefaultBotCommandMessages.unknownLanguage
+						, "Idioma não reconhecido: {typedLanguage}. Digite {commandName} seguido de um destes idiomas: {languages}"
+						, "Unknown language: {typedLanguage}. Type {commandName} followed by one of these languages: {languages}")
+				.systemMessage(JbLanguageNames.portuguese, "português", "Portuguese")
+				.systemMessage(JbLanguageNames.english, "inglês", "English")
+				.systemMessage(JbLanguageNames.spanish, "espanhol", "Spanish");
+		return withTexts;
 	}
 
 }
