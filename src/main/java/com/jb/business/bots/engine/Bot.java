@@ -20,7 +20,6 @@ import com.jb.entities.JbEntityBotExplanation;
 import com.jn.business.messages.JnInstantMessageType;
 import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
-import com.jn.utils.JnSystemProperties;
 
 import com.ccp.json.fields.validation.CcpJsonCommonsFields;
 
