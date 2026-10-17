@@ -25,8 +25,8 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
  * </ul>
  */
 @CcpEntityCache(3600)
-@CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
-@CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotCommandStepSession.Fields.class)
+@CcpEntityFieldsTransformer(JnJsonTransformersFieldsEntityDefault.class)
+@CcpEntityFieldsValidator(JbEntityBotCommandStepSession.Fields.class)
 public class JbEntityBotCommandStepSession implements CcpEntityConfigurator {
 
 	/** The entity {@code jb_bot_command_step_session}, with every decorator of this configuration. */

@@ -31,8 +31,8 @@ import com.jn.utils.JnLanguage;
  * </ul>
  */
 @CcpEntityCache(3600)
-@CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
-@CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotExplanation.Fields.class)
+@CcpEntityFieldsTransformer(JnJsonTransformersFieldsEntityDefault.class)
+@CcpEntityFieldsValidator(JbEntityBotExplanation.Fields.class)
 public class JbEntityBotExplanation implements CcpEntityConfigurator {
 
 	/** The entity {@code jb_bot_explanation}, with every decorator of this configuration. */

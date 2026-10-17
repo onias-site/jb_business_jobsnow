@@ -22,8 +22,8 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
  * <li>index {@code jb_pending_tickets}</li>
  * </ul>
  */
-@CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
-@CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityPendingTickets.Fields.class)
+@CcpEntityFieldsTransformer(JnJsonTransformersFieldsEntityDefault.class)
+@CcpEntityFieldsValidator(JbEntityPendingTickets.Fields.class)
 public class JbEntityPendingTickets implements CcpEntityConfigurator {
 
 	/** The entity {@code jb_pending_tickets}, with every decorator of this configuration. */

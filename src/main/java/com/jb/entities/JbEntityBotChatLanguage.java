@@ -26,8 +26,8 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
  * </ul>
  */
 @CcpEntityCache(3600)
-@CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
-@CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBotChatLanguage.Fields.class)
+@CcpEntityFieldsTransformer(JnJsonTransformersFieldsEntityDefault.class)
+@CcpEntityFieldsValidator(JbEntityBotChatLanguage.Fields.class)
 public class JbEntityBotChatLanguage implements CcpEntityConfigurator {
 
 	/** The entity {@code jb_bot_chat_language}, with every decorator of this configuration. */

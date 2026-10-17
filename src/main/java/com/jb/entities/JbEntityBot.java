@@ -50,8 +50,8 @@ import com.jn.utils.JnLanguage;
  * </ul>
  */
 @CcpEntityCache(3600)
-@CcpEntityFieldsTransformer(classReferenceWithTheFields = JnJsonTransformersFieldsEntityDefault.class)
-@CcpEntityFieldsValidator(classReferenceWithTheFields = JbEntityBot.Fields.class)
+@CcpEntityFieldsTransformer(JnJsonTransformersFieldsEntityDefault.class)
+@CcpEntityFieldsValidator(JbEntityBot.Fields.class)
 public class JbEntityBot implements CcpEntityConfigurator {
 
 	/** The entity {@code jb_bot}, with every decorator of this configuration. */
