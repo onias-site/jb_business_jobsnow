@@ -15,14 +15,11 @@ import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityFactor
 import com.ccp.especifications.db.utils.entity.decorators.interfaces.CcpEntityConfigurator;
 import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityFieldPrimaryKey;
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
-import com.ccp.process.CcpProcessStatusDefault;
 import com.jb.business.bots.engine.JbBotType;
 import com.jb.business.bots.engine.JbCommandNamesInPortuguese;
 import com.jb.business.bots.engine.JbDefaultBotCommandMessages;
 import com.jb.business.bots.engine.JbLanguageNames;
 import com.jb.business.bots.engine.JbSupportBotCommands;
-import com.jb.business.bots.login.token.JbSupportLoginToken;
-import com.jb.business.bots.login.token.JbSupportLoginTokenTypes;
 import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsChoose;
 import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsMessages;
 import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsShow;
@@ -32,15 +29,12 @@ import com.jn.business.bots.JnBotConfigurationSeeds;
 import com.jn.entities.JnEntityBotCommandStep;
 import com.jn.entities.JnEntityBotCommandStepEndMessage;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
-import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
-import com.jn.utils.JnLanguage;
 
 /**
- * A bot of the platform. Seeds the support bot and the part of its configuration that belongs to jb: the commands
- * {@code solveLoginTokenTicket} and {@code pendingTickets}, the Portuguese names of the default commands and the texts of
- * the engine. The commands themselves are records of {@code JnEntityBotCommand}, found by {@code botName} when the bot
- * starts; the other cost centers seed theirs (vis seeds the skill and ignored users commands), and jb does not know them.
+ * A bot of the platform. Seeds the support bot and the part of its configuration that belongs to jb: the command
+ * {@code pendingTickets}, the Portuguese names of the default commands and the texts of the engine. The commands themselves are records of {@code JnEntityBotCommand}, found by {@code botName} when the bot
+ * starts; the other cost centers seed theirs (vis seeds the skill and ignored users commands, js the login token tickets), and jb does not know them.
  * Until 2026-10-15 this entity kept the list of the commands of the bot, seeded only by jb, which made jb import vis.
  * <p>
  * Configuration:
@@ -53,6 +47,10 @@ import com.jn.utils.JnLanguage;
 @CcpEntityFieldsTransformer(JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(JbEntityBot.Fields.class)
 public class JbEntityBot implements CcpEntityConfigurator {
+	/** The single instance: the class keeps no state. */
+	public final static JbEntityBot INSTANCE = new JbEntityBot();
+
+	private JbEntityBot() {}
 
 	/** The entity {@code jb_bot}, with every decorator of this configuration. */
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBot.class).entityInstance;
@@ -71,8 +69,8 @@ public class JbEntityBot implements CcpEntityConfigurator {
 
 
 	/**
-	 * Seeds the support bot, the configuration of the commands of jb, the templates of the login token ticket notices
-	 * and the texts of the support bot that belong to jb (Portuguese and English).
+	 * Seeds the support bot, the configuration of the commands of jb and the texts of the support bot that belong to jb
+	 * (Portuguese and English).
 	 * @return the seed records
 	 */
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
@@ -80,15 +78,8 @@ public class JbEntityBot implements CcpEntityConfigurator {
 		List<CcpBulkItem> createBulkItems = CcpEntityConfigurator.super.toCreateBulkItems(ENTITY, supportBot);
 		List<CcpBulkItem> firstRecords = new ArrayList<>(createBulkItems);
 
-		JbSupportLoginTokenTypes[] values = JbSupportLoginTokenTypes.values();
-		for (JbSupportLoginTokenTypes value : values) {
-			List<CcpBulkItem> instantMessageTemplate = value.getInstantMessageTemplate();
-			firstRecords.addAll(instantMessageTemplate);
-		}
-
 		JnBotConfigurationSeeds seeds = new JnBotConfigurationSeeds(JbBotType.support);
-		JnBotConfigurationSeeds withLoginToken = this.addSolveLoginTokenTicket(seeds);
-		JnBotConfigurationSeeds withPendingTickets = this.addPendingTickets(withLoginToken);
+		JnBotConfigurationSeeds withPendingTickets = this.addPendingTickets(seeds);
 		JnBotConfigurationSeeds withEngineTexts = this.addEngineTexts(withPendingTickets);
 		JbCommandNamesInPortuguese[] commandNamesInPortuguese = JbCommandNamesInPortuguese.values();
 		JnBotConfigurationSeeds withNames = withEngineTexts.portugueseNames(commandNamesInPortuguese);
@@ -96,31 +87,6 @@ public class JbEntityBot implements CcpEntityConfigurator {
 		firstRecords.addAll(botItems);
 
 		return firstRecords;
-	}
-
-	/**
-	 * {@code /solveLoginTokenTicket <ticketType> <email>}, with its explanation; without an open ticket of the type, the
-	 * session ends with a notice to the operator.
-	 * @param seeds the seeds so far
-	 * @return the seeds with the command
-	 */
-	private JnBotConfigurationSeeds addSolveLoginTokenTicket(JnBotConfigurationSeeds seeds) {
-		String commandName = JbSupportBotCommands.solveLoginTokenTicket.name();
-		String email = "{" + JnJsonCommonsFields.email + "}";
-		String ticketType = "{" + JbSupportLoginToken.JsonFields.ticketType + "}";
-
-		CcpJsonRepresentation portuguese = JnEntityBotCommandStep.getStepFlowMessage(JnLanguage.portuguese, "O e-mail '" + email + "' não possui aberto ticket do tipo '" + ticketType + "'");
-		CcpJsonRepresentation english = JnEntityBotCommandStep.getStepFlowMessage(JnLanguage.english, "The e-mail '" + email + "' has no open ticket of the type '" + ticketType + "'");
-		CcpJsonRepresentation spanish = JnEntityBotCommandStep.getStepFlowMessage(JnLanguage.spanish, "El correo '" + email + "' no tiene ticket abierto del tipo '" + ticketType + "'");
-		CcpJsonRepresentation stepFlow = JnEntityBotCommandStep.getStepFlow(CcpProcessStatusDefault.NOT_FOUND.status, "", portuguese, english, spanish);
-		CcpJsonRepresentation step = JnEntityBotCommandStep.getBotCommandStep(commandName, JbSupportLoginToken.class, "", stepFlow);
-
-		JnBotConfigurationSeeds withCommand = seeds
-				.command(commandName, JbSupportLoginToken.JsonFields.ticketType, JnJsonCommonsFields.email)
-				.steps(step)
-				.commandExplanation(commandName, JnLanguage.portuguese, "Quando o usuário alega que seu token de login está bloqueado ou não foi enviado, ele abre uma solicitação que é recebida pelo time de suporte, então o operador de suporte evoca este comando para solucionar a solicitação que o usuário abriu")
-				.commandExplanation(commandName, JnLanguage.english, "When the user claims that their login token is locked or was not sent, they open a request that the support team receives, then the support operator invokes this command to solve the request the user opened");
-		return withCommand;
 	}
 
 	/**

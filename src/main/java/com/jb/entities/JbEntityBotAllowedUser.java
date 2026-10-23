@@ -35,6 +35,10 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 @CcpEntityFieldsTransformer(JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(JbEntityBotAllowedUser.Fields.class)
 public class JbEntityBotAllowedUser implements CcpEntityConfigurator {
+	/** The single instance: the class keeps no state. */
+	public final static JbEntityBotAllowedUser INSTANCE = new JbEntityBotAllowedUser();
+
+	private JbEntityBotAllowedUser() {}
 
 	/** The entity {@code jb_bot_allowed_user}, with every decorator of this configuration. */
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotAllowedUser.class).entityInstance;

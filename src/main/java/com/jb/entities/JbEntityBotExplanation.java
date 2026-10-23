@@ -34,6 +34,10 @@ import com.jn.utils.JnLanguage;
 @CcpEntityFieldsTransformer(JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(JbEntityBotExplanation.Fields.class)
 public class JbEntityBotExplanation implements CcpEntityConfigurator {
+	/** The single instance: the class keeps no state. */
+	public final static JbEntityBotExplanation INSTANCE = new JbEntityBotExplanation();
+
+	private JbEntityBotExplanation() {}
 
 	/** The entity {@code jb_bot_explanation}, with every decorator of this configuration. */
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotExplanation.class).entityInstance;

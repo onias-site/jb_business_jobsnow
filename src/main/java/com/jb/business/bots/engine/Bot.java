@@ -239,13 +239,7 @@ class Bot implements JbBotBusiness{
 	 * @return the producer
 	 */
 	private CcpBusiness newSessionProducer(CcpJsonRepresentation json, String chatLanguage) {
-		CcpBusiness newSessionProducer = jsn ->
-		json
-		.mergeWithAnotherJson(json)
-		.renameField(JnJsonInstantMessengerFields.message, JnJsonCommonsFields.typedValue)
-		.put(JnJsonCommonsFields.language, chatLanguage)
-		.getTransformedJson(JsonProducers.putCommandNameWhenHasNoSession)
-		;
+		CcpBusiness newSessionProducer = new BotNewSessionProducer(json, chatLanguage);
 		return newSessionProducer;
 	}
 

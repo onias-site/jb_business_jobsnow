@@ -13,6 +13,10 @@ import com.jn.utils.JnLanguage;
  * ticket the session ends with that notice ({@code noPendingTicket}).
  */
 public class JbSupportPendingTicketsShow implements CcpBusiness {
+	/** The single instance: the class keeps no state. */
+	public final static JbSupportPendingTicketsShow INSTANCE = new JbSupportPendingTicketsShow();
+
+	private JbSupportPendingTicketsShow() {}
 
 	/**
 	 * Shows the count and the oldest ticket.

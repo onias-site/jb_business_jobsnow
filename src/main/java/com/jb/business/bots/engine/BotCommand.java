@@ -95,10 +95,7 @@ class BotCommand implements JbBotBusiness{
 	 * @return the parameter names
 	 */
 	List<String> loadParameterNames(String name, CcpSelectUnionAll result) {
-		Supplier<CcpJsonRepresentation> jsonSupplier = () -> 
-		CcpOtherConstants.EMPTY_JSON
-		.put(JnJsonInstantMessengerFields.commandName, name)
-		;
+		Supplier<CcpJsonRepresentation> jsonSupplier = () -> CcpOtherConstants.EMPTY_JSON.put(JnJsonInstantMessengerFields.commandName, name);
 		CcpJsonRepresentation recordFromUnionAll = JnEntityBotCommand.ENTITY.getRecordFromUnionAll(result, jsonSupplier);
 		List<String> parameterNames = recordFromUnionAll.getAsStringList(JnEntityBotCommand.Fields.parameterName);
 		return parameterNames;

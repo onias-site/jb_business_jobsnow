@@ -113,7 +113,7 @@ class BotCommandStep implements JbBotBusiness{
 	 * @param nextStep the next step
 	 * @return the saved session
 	 */
-	private CcpJsonRepresentation saveSession(CcpJsonRepresentation json, String nextStep) {
+	CcpJsonRepresentation saveSession(CcpJsonRepresentation json, String nextStep) {
 		
 		CcpJsonRepresentation newJson = json.put(JnJsonInstantMessengerFields.stepName, nextStep);
 		
@@ -187,11 +187,7 @@ class BotCommandStep implements JbBotBusiness{
 			
 			CcpJsonRepresentation engineResult = this.engine.execute(json);
 			Predicate<CcpJsonRepresentation> conditionIfHasMoreSession = jsn -> false == this.nextStep.trim().isEmpty() && JbBotEngine.INSTANCE.allSteps.containsKey(this.nextStep);			
-			CcpBusiness updateSession = jsn -> {
-				CcpJsonRepresentation jsonPreservingUmmatableFields = jsn.mergeWithAnotherJson(ummutableFields);
-				CcpJsonRepresentation savedSession = this.saveSession(jsonPreservingUmmatableFields, this.nextStep);
-				return savedSession;
-			};
+			CcpBusiness updateSession = new BotCommandStepUpdateSession(this, ummutableFields, this.nextStep);
 
 			CcpJsonRepresentation endMessagesResult = bot.sendMessage(engineResult, this.endMessages);
 

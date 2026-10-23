@@ -22,6 +22,10 @@ import com.jn.utils.JnLanguage;
  * meantime is not run; the operator is told so and sees the next one.
  */
 public class JbSupportPendingTicketsChoose implements CcpBusiness {
+	/** The single instance: the class keeps no state. */
+	public final static JbSupportPendingTicketsChoose INSTANCE = new JbSupportPendingTicketsChoose();
+
+	private JbSupportPendingTicketsChoose() {}
 
 	/** The answer that solves the ticket shown. */
 	private static final String SOLVE = "1";

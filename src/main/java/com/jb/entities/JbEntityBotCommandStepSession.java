@@ -28,6 +28,10 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 @CcpEntityFieldsTransformer(JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(JbEntityBotCommandStepSession.Fields.class)
 public class JbEntityBotCommandStepSession implements CcpEntityConfigurator {
+	/** The single instance: the class keeps no state. */
+	public final static JbEntityBotCommandStepSession INSTANCE = new JbEntityBotCommandStepSession();
+
+	private JbEntityBotCommandStepSession() {}
 
 	/** The entity {@code jb_bot_command_step_session}, with every decorator of this configuration. */
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotCommandStepSession.class).entityInstance;

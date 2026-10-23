@@ -9,7 +9,6 @@ import com.ccp.decorators.CcpJsonFieldName;
  */
 public enum JbCommandNamesInPortuguese implements CcpJsonFieldName{
 	/** {@code /solucionarTicketsDeTokenDeLogin}. */
-	solveLoginTokenTicket { public String getValue() { return "solucionarTicketsDeTokenDeLogin"; } },
 	/** {@code /ticketsPendentes}. */
 	pendingTickets { public String getValue() { return "ticketsPendentes"; } },
 	/** {@code /idDoChat}. */

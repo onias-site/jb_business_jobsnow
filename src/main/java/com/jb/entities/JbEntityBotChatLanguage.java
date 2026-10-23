@@ -29,6 +29,10 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 @CcpEntityFieldsTransformer(JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(JbEntityBotChatLanguage.Fields.class)
 public class JbEntityBotChatLanguage implements CcpEntityConfigurator {
+	/** The single instance: the class keeps no state. */
+	public final static JbEntityBotChatLanguage INSTANCE = new JbEntityBotChatLanguage();
+
+	private JbEntityBotChatLanguage() {}
 
 	/** The entity {@code jb_bot_chat_language}, with every decorator of this configuration. */
 	public static final CcpEntity ENTITY = new CcpEntityFactory(JbEntityBotChatLanguage.class).entityInstance;
