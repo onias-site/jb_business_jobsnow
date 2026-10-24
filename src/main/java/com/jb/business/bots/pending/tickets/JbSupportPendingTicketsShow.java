@@ -35,9 +35,15 @@ public class JbSupportPendingTicketsShow implements CcpBusiness {
 			return ended;
 		}
 
-		String listText = JbSupportPendingTicketsList.getListText(language, tickets);
-		String firstTicket = tickets.get(0);
-		CcpJsonRepresentation jsonWithReply = json.put(JnJsonInstantMessengerFields.botReply, listText);
+		// a command that left its ticket open to go to the next one (JnJsonInstantMessengerFields.skippedTicket) has the list
+		// start after it; otherwise, and when the ticket is no longer in the list, from the first one
+		String skippedTicket = json.getAsString(JnJsonInstantMessengerFields.skippedTicket);
+		int skippedIndex = tickets.indexOf(skippedTicket);
+		int firstIndex = (skippedIndex + 1) % tickets.size();
+		String listText = JbSupportPendingTicketsList.getListText(language, tickets, firstIndex);
+		String firstTicket = tickets.get(firstIndex);
+		CcpJsonRepresentation jsonWithoutTheSkippedTicket = json.removeFields(JnJsonInstantMessengerFields.skippedTicket);
+		CcpJsonRepresentation jsonWithReply = jsonWithoutTheSkippedTicket.put(JnJsonInstantMessengerFields.botReply, listText);
 		CcpJsonRepresentation jsonWithTheTicket = jsonWithReply.put(JbSupportPendingTicketsFields.currentTicket, firstTicket);
 		return jsonWithTheTicket;
 	}

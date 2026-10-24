@@ -16,7 +16,9 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
  * <p>A command finishes when its session ends without an unforeseen error: the last step succeeded, or a step
  * diverted the flow to an end foreseen in its {@code stepFlow} (for example, there was no open ticket for the
  * email, which also means there is nothing left to solve). A command left in the middle, waiting for an answer,
- * keeps its ticket.
+ * keeps its ticket. A command whose step ends asking to skip the ticket
+ * ({@link JnJsonInstantMessengerFields#skipTheTicket}: the operator went to the next one) also keeps it, and the bot shows
+ * {@code /pendingTickets} from the ticket after it.
  */
 final class PendingTicket {
 
@@ -37,6 +39,13 @@ final class PendingTicket {
 
 		if(noTicket) {
 			return result;
+		}
+
+		boolean skipTheTicket = result.getAsBoolean(JnJsonInstantMessengerFields.skipTheTicket);
+
+		if(skipTheTicket) {
+			CcpJsonRepresentation goingToTheNextTicket = goToTheNextTicket(ticket, result);
+			return goingToTheNextTicket;
 		}
 
 		String botName = stepInput.getAsString(JnJsonInstantMessengerFields.botName);
@@ -72,5 +81,19 @@ final class PendingTicket {
 		CcpJsonRepresentation resultWithoutTheFlag = result.removeFields(JbBotEngineFields.ticketFromTheList);
 		CcpJsonRepresentation resultShowingTheListAgain = resultWithoutTheFlag.put(JnJsonInstantMessengerFields.typedValueToRedirect, pendingTicketsCommand);
 		return resultShowingTheListAgain;
+	}
+
+	/**
+	 * Keeps the ticket open and shows {@code /pendingTickets} from the ticket after it.
+	 * @param ticket the ticket left open
+	 * @param result the result of the step
+	 * @return the result with the redirection
+	 */
+	private static CcpJsonRepresentation goToTheNextTicket(String ticket, CcpJsonRepresentation result) {
+		String pendingTicketsCommand = "/" + JbSupportBotCommands.pendingTickets;
+		CcpJsonRepresentation resultWithoutTheFlags = result.removeFields(JnJsonInstantMessengerFields.skipTheTicket, JbBotEngineFields.ticketFromTheList);
+		CcpJsonRepresentation resultWithTheSkippedTicket = resultWithoutTheFlags.put(JnJsonInstantMessengerFields.skippedTicket, ticket);
+		CcpJsonRepresentation resultShowingTheList = resultWithTheSkippedTicket.put(JnJsonInstantMessengerFields.typedValueToRedirect, pendingTicketsCommand);
+		return resultShowingTheList;
 	}
 }

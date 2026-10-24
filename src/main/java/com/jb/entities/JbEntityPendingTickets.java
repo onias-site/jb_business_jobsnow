@@ -15,7 +15,7 @@ import com.jn.json.fields.validation.JnJsonCommonsFields;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
 /**
- * The tickets (commands sent by the platform to the support operator) the operator has not solved yet, listed by {@code /pendingTickets}; a ticket leaves the list when the command that solves it finishes.
+ * The tickets (commands sent by the platform to the support operator) the operator has not solved yet, listed by {@code /pendingTickets} by {@code priority} (the lower first) and, on a tie, by the time they arrived ({@code timestamp}, the older first); a ticket leaves the list when the command that solves it finishes.
  * <p>
  * Configuration:
  * <ul>
@@ -57,6 +57,14 @@ public class JbEntityPendingTickets implements CcpEntityConfigurator {
 		@CcpJsonFieldValidatorRequired
 		@CcpJsonCopyFieldValidationsFrom(JnJsonCommonsFields.class)
 		timestamp,
+
+		/**
+		 * The {@code priority} field: required, validated as in {@code JnJsonInstantMessengerFields}; the lower, the sooner
+		 * the list shows the ticket. Moved from the inbox ({@code JnEntitySupportPendingCommand}) with the ticket.
+		 */
+		@CcpJsonFieldValidatorRequired
+		@CcpJsonCopyFieldValidationsFrom(JnJsonInstantMessengerFields.class)
+		priority,
 		;
 	}
 }

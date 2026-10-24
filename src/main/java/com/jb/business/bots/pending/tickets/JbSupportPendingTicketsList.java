@@ -46,7 +46,7 @@ final class JbSupportPendingTicketsList {
 	private JbSupportPendingTicketsList() {}
 
 	/**
-	 * The tickets of the operator of the session, oldest first.
+	 * The tickets of the operator of the session, by priority (the lower first) and, on a tie, oldest first.
 	 */
 	static List<String> getTickets(CcpJsonRepresentation json) {
 
@@ -66,9 +66,10 @@ final class JbSupportPendingTicketsList {
 
 		Collection<CcpJsonRepresentation> distinctTickets = ticketsByCommand.values();
 		Stream<CcpJsonRepresentation> ticketsStream = distinctTickets.stream();
-		Comparator<CcpJsonRepresentation> byTimestamp = Comparator.comparing(ticket -> ticket.getAsLongNumber(JbEntityPendingTickets.Fields.timestamp));
-		Comparator<CcpJsonRepresentation> byTimestampAndTicket = byTimestamp.thenComparing(ticket -> ticket.getAsString(JbEntityPendingTickets.Fields.ticket));
-		Stream<CcpJsonRepresentation> sortedTicketsStream = ticketsStream.sorted(byTimestampAndTicket);
+		Comparator<CcpJsonRepresentation> byPriority = Comparator.comparing(ticket -> ticket.getAsLongNumber(JbEntityPendingTickets.Fields.priority));
+		Comparator<CcpJsonRepresentation> byPriorityAndTimestamp = byPriority.thenComparing(ticket -> ticket.getAsLongNumber(JbEntityPendingTickets.Fields.timestamp));
+		Comparator<CcpJsonRepresentation> byPriorityTimestampAndTicket = byPriorityAndTimestamp.thenComparing(ticket -> ticket.getAsString(JbEntityPendingTickets.Fields.ticket));
+		Stream<CcpJsonRepresentation> sortedTicketsStream = ticketsStream.sorted(byPriorityTimestampAndTicket);
 		Stream<String> ticketCommandsStream = sortedTicketsStream.map(ticket -> ticket.getAsString(JbEntityPendingTickets.Fields.ticket));
 		List<String> tickets = ticketCommandsStream.collect(Collectors.toList());
 		return tickets;
@@ -88,11 +89,13 @@ final class JbSupportPendingTicketsList {
 		for (CcpJsonRepresentation pendingCommand : inbox) {
 			String command = pendingCommand.getAsString(JnEntitySupportPendingCommand.Fields.command);
 			Long timestamp = pendingCommand.getAsLongNumber(JnEntitySupportPendingCommand.Fields.timestamp);
+			Long priority = pendingCommand.getAsLongNumber(JnEntitySupportPendingCommand.Fields.priority);
 
 			CcpJsonRepresentation ticketWithBotName = CcpOtherConstants.EMPTY_JSON.put(JbEntityPendingTickets.Fields.botName, botName);
 			CcpJsonRepresentation ticketWithChatId = ticketWithBotName.put(JbEntityPendingTickets.Fields.chatId, chatId);
 			CcpJsonRepresentation ticketWithCommand = ticketWithChatId.put(JbEntityPendingTickets.Fields.ticket, command);
-			CcpJsonRepresentation ticket = ticketWithCommand.put(JbEntityPendingTickets.Fields.timestamp, timestamp);
+			CcpJsonRepresentation ticketWithTimestamp = ticketWithCommand.put(JbEntityPendingTickets.Fields.timestamp, timestamp);
+			CcpJsonRepresentation ticket = ticketWithTimestamp.put(JbEntityPendingTickets.Fields.priority, priority);
 
 			JbEntityPendingTickets.ENTITY.save(ticket);
 			JnEntitySupportPendingCommand.ENTITY.delete(pendingCommand);
@@ -190,13 +193,21 @@ final class JbSupportPendingTicketsList {
 	 * How many tickets the operator has, followed by the first one.
 	 */
 	static String getListText(JnLanguage language, List<String> tickets) {
+		String listText = getListText(language, tickets, 0);
+		return listText;
+	}
+
+	/**
+	 * How many tickets the operator has, followed by the one at the given position.
+	 */
+	static String getListText(JnLanguage language, List<String> tickets, int ticketIndex) {
 		int ticketsCount = tickets.size();
 		boolean singleTicket = ticketsCount == 1;
 		JbSupportPendingTicketsMessages header = singleTicket ? JbSupportPendingTicketsMessages.oneTicket : JbSupportPendingTicketsMessages.manyTickets;
 		CcpJsonRepresentation parameters = CcpOtherConstants.EMPTY_JSON.put(JbSupportPendingTicketsMessageFields.ticketsCount, ticketsCount);
 		String headerText = header.getMessage(language, parameters);
-		String firstTicketPrompt = getTicketPrompt(language, tickets, 0);
-		String listText = headerText + "\n" + firstTicketPrompt;
+		String ticketPrompt = getTicketPrompt(language, tickets, ticketIndex);
+		String listText = headerText + "\n" + ticketPrompt;
 		return listText;
 	}
 
