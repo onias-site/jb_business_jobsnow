@@ -2,6 +2,7 @@ package com.jb.entities;
 
 import com.ccp.decorators.CcpJsonFieldName;
 import com.ccp.especifications.db.utils.entity.CcpEntity;
+import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityCache;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityFieldsTransformer;
 import com.ccp.especifications.db.utils.entity.decorators.annotations.CcpEntityFieldsValidator;
 import com.ccp.especifications.db.utils.entity.decorators.engine.CcpEntityFactory;
@@ -22,6 +23,7 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
  * <li>index {@code jb_pending_tickets}</li>
  * </ul>
  */
+@CcpEntityCache(3600)
 @CcpEntityFieldsTransformer(JnJsonTransformersFieldsEntityDefault.class)
 @CcpEntityFieldsValidator(JbEntityPendingTickets.Fields.class)
 public class JbEntityPendingTickets implements CcpEntityConfigurator {

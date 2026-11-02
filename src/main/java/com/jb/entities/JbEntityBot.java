@@ -16,6 +16,7 @@ import com.ccp.especifications.db.utils.entity.decorators.interfaces.CcpEntityCo
 import com.ccp.especifications.db.utils.entity.fields.annotations.CcpEntityFieldPrimaryKey;
 import com.ccp.json.validations.fields.annotations.CcpJsonCopyFieldValidationsFrom;
 import com.jb.business.bots.engine.JbBotType;
+import com.jb.business.bots.engine.JbBusinessReceiveBotUpdate;
 import com.jb.business.bots.engine.JbCommandNamesInPortuguese;
 import com.jb.business.bots.engine.JbDefaultBotCommandMessages;
 import com.jb.business.bots.engine.JbLanguageNames;
@@ -28,6 +29,7 @@ import com.jb.business.bots.pending.tickets.JbSupportPendingTicketsSteps;
 import com.jn.business.bots.JnBotConfigurationSeeds;
 import com.jn.entities.JnEntityBotCommandStep;
 import com.jn.entities.JnEntityBotCommandStepEndMessage;
+import com.jn.entities.JnEntityBotUpdateHandler;
 import com.jn.entities.fields.transformers.JnJsonTransformersFieldsEntityDefault;
 import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 
@@ -69,8 +71,8 @@ public class JbEntityBot implements CcpEntityConfigurator {
 
 
 	/**
-	 * Seeds the support bot, the configuration of the commands of jb and the texts of the support bot that belong to jb
-	 * (Portuguese and English).
+	 * Seeds the support bot, the configuration of the commands of jb, the texts of the support bot that belong to jb
+	 * (Portuguese and English) and the business that receives the updates of the webhook.
 	 * @return the seed records
 	 */
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
@@ -85,6 +87,10 @@ public class JbEntityBot implements CcpEntityConfigurator {
 		JnBotConfigurationSeeds withNames = withEngineTexts.portugueseNames(commandNamesInPortuguese);
 		List<CcpBulkItem> botItems = withNames.getBulkItems();
 		firstRecords.addAll(botItems);
+
+		String supportName = JbBotType.support.name();
+		List<CcpBulkItem> updateHandlerSeeds = JnEntityBotUpdateHandler.getSeeds(supportName, JbBusinessReceiveBotUpdate.class);
+		firstRecords.addAll(updateHandlerSeeds);
 
 		return firstRecords;
 	}
