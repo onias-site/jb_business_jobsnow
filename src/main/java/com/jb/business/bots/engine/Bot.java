@@ -249,6 +249,40 @@ class Bot implements JbBotBusiness{
 	 * @return the result of the step
 	 */
 	public CcpJsonRepresentation apply(CcpJsonRepresentation message) {
+		CcpJsonRepresentation sessionInput = this.getSessionInput(message);
+		CcpJsonRepresentation loadSession = this.loadSession(sessionInput);
+		BotCommand botCommand = this.getCommand(loadSession);
+		CcpJsonRepresentation execute = botCommand.execute(loadSession);
+		CcpJsonRepresentation redirected = this.redirect(message, execute);
+		return redirected;
+	}
+
+	/**
+	 * The name of the command that handles the message: the command typed, or the one of the session of the chat, or
+	 * {@code showAllCommands} for a chat without session. It chooses the queue of the message (one per command since
+	 * 2026-11-04, see {@link JbBusinessReceiveBotUpdate}); the session is loaded as {@link #apply} loads it, so a command
+	 * typed in the middle of another one already discards the old session here.
+	 * @param message the message received
+	 * @return the canonical name of the command
+	 */
+	String getCommandNameOf(CcpJsonRepresentation message) {
+		CcpJsonRepresentation sessionInput = this.getSessionInput(message);
+		CcpJsonRepresentation session = this.loadSession(sessionInput);
+		String commandName = session.getAsString(JnJsonInstantMessengerFields.commandName);
+		boolean sessionWithoutCommand = commandName.isEmpty();
+		if(sessionWithoutCommand) {
+			String showAllCommands = JbDefaultBotCommandStep.showAllCommands.name();
+			return showAllCommands;
+		}
+		return commandName;
+	}
+
+	/**
+	 * The message as the session reads it: the bot, the type of message, the reply id and the typed value.
+	 * @param message the message received
+	 * @return the input of the session
+	 */
+	private CcpJsonRepresentation getSessionInput(CcpJsonRepresentation message) {
 		String botTypeName2 = botType.name();
 		CcpJsonRepresentation put = message
 				.put(JnJsonInstantMessengerFields.botName, botTypeName2);
@@ -260,11 +294,7 @@ class Bot implements JbBotBusiness{
 				;
 
 		CcpJsonRepresentation renameField = json.renameField(JnJsonInstantMessengerFields.message, JnJsonCommonsFields.typedValue);
-		CcpJsonRepresentation loadSession = this.loadSession(renameField);
-		BotCommand botCommand = this.getCommand(loadSession);
-		CcpJsonRepresentation execute = botCommand.execute(loadSession);
-		CcpJsonRepresentation redirected = this.redirect(message, execute);
-		return redirected;
+		return renameField;
 	}
 
 	/**
