@@ -16,16 +16,19 @@ import com.jn.mensageria.JnFunctionMensageriaSender;
  * {@code JbInstantMessengerMessageReader}: it leaves the update in the same simplified form that reader produces and hands
  * it to the bot. The two ways share the offset of the bot in {@link JbEntityBotUpdateId}.
  * <p>
- * Since 2026-11-04 this business runs in the consumer of its own topic (one thread) and only dispatches: it finds the
- * command that handles the message ({@code Bot.getCommandNameOf}) and publishes the message to the queue of that command
- * ({@link JbBusinessRunBotCommand}{@code ~<command>}, one thread each), where the bot runs. Every command needs its line
- * in {@code topicos.tsv}: a message to a topic that does not exist fails here and holds the updates behind it.
+ * Since 2026-11-04 this business runs in the consumer of its own topic and only dispatches: it finds the command that
+ * handles the message ({@code Bot.getCommandNameOf}) and publishes the message to the queue of that command of that bot
+ * ({@link JbBusinessRunBotCommand}{@code ~<bot>~<command>}), where the bot runs. Only the consumers of the
+ * dispatcher name the Pub/Sub sender in the column {@code senderClass} of {@code topicos.tsv} (since 2026-11-05):
+ * without it the consumer uses the synchronous sender of the registry, and the publication would run the command right
+ * here. The consumers of the commands keep the synchronous one. Threads: 1 in the queue of each bot ({@code JnBusinessHandleBotUpdate~<bot>}, since
+ * 2026-11-05), 1 in each command of the support bot, 4 in each command of the user bot. Every command needs its line in {@code topicos.tsv}: a message to a topic that does not exist fails here.
  * </p><p>
  * The offset is saved <b>before</b> the bot runs: an update may be delivered again (by Telegram, when the webhook answers
  * late or not 2xx; by the messaging, which since 2026-11-04 carries the update from the webhook to this business and
  * delivers again a message whose processing failed), and an update must not run twice (it may approve a ticket) nor, by
- * failing, hold the updates behind it. The topic has a single consumer thread, so a delivery repeated is almost always
- * that of the last update received, and it is recognized by equality. A comparison of order would not do: after a week
+ * failing, hold the updates behind it. A delivery repeated is almost always that of the last update received, and it is
+ * recognized by equality: the queue of each bot has a single thread, and the offset is kept by bot. A comparison of order would not do: after a week
  * without updates Telegram picks the next id at random, and a lower one would be ignored forever.
  */
 public class JbBusinessReceiveBotUpdate implements CcpBusiness {
@@ -89,7 +92,7 @@ public class JbBusinessReceiveBotUpdate implements CcpBusiness {
 		JbBotType botType = JbBotType.valueOf(botName);
 		Bot bot = botType.getBot();
 		String commandName = bot.getCommandNameOf(message);
-		JnFunctionMensageriaSender queueOfTheCommand = new JnFunctionMensageriaSender(JbBusinessRunBotCommand.INSTANCE, commandName);
+		JnFunctionMensageriaSender queueOfTheCommand = new JnFunctionMensageriaSender(JbBusinessRunBotCommand.INSTANCE, botName, commandName);
 		queueOfTheCommand.execute(message);
 		return json;
 	}
