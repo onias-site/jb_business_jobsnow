@@ -72,7 +72,7 @@ public class JbEntityBot implements CcpEntityConfigurator {
 
 	/**
 	 * Seeds the support bot, the configuration of the commands of jb, the texts of the support bot that belong to jb
-	 * (Portuguese and English) and the business that receives the updates of the webhook.
+	 * (Portuguese and English) and, for every bot, the business that receives the updates of the webhook.
 	 * @return the seed records
 	 */
 	public List<CcpBulkItem> getFirstRecordsToInsert() {
@@ -88,9 +88,13 @@ public class JbEntityBot implements CcpEntityConfigurator {
 		List<CcpBulkItem> botItems = withNames.getBulkItems();
 		firstRecords.addAll(botItems);
 
-		String supportName = JbBotType.support.name();
-		List<CcpBulkItem> updateHandlerSeeds = JnEntityBotUpdateHandler.getSeeds(supportName, JbBusinessReceiveBotUpdate.class);
-		firstRecords.addAll(updateHandlerSeeds);
+		// every bot receives its updates through the webhook in production, the user bot included (2026-11-13)
+		JbBotType[] bots = JbBotType.values();
+		for (JbBotType bot : bots) {
+			String botName = bot.name();
+			List<CcpBulkItem> updateHandlerSeeds = JnEntityBotUpdateHandler.getSeeds(botName, JbBusinessReceiveBotUpdate.class);
+			firstRecords.addAll(updateHandlerSeeds);
+		}
 
 		return firstRecords;
 	}
