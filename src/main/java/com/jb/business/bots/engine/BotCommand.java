@@ -256,17 +256,38 @@ class BotCommand implements JbBotBusiness{
 	 * @return {@code true} when visible
 	 */
 	public boolean isVisible(CcpJsonRepresentation json) {
+		JbBotBusiness decidingStep = this.getDecidingStep();
+		boolean visible = decidingStep.isVisible(json);
+		return visible;
+	}
+
+	/**
+	 * Tells whether typing the command runs it at once, keeping the session in progress: a default command decides by
+	 * itself ({@code /sair}, {@code /definirIdioma} and the others work on the command in progress), the others by their
+	 * first step. Until 2026-11-15 this class did not delegate it and every command lacked priority; the engine then
+	 * deleted the session in progress before a default command read it, and that delete only missed because it calculated
+	 * the id over the chatId as a double, while the session had been saved with it as a whole number.
+	 * @param json the session
+	 * @return {@code true} when the command runs at once
+	 */
+	public boolean hasPriority(CcpJsonRepresentation json) {
+		JbBotBusiness decidingStep = this.getDecidingStep();
+		boolean hasPriority = decidingStep.hasPriority(json);
+		return hasPriority;
+	}
+
+	/**
+	 * The step that decides the visibility and the priority of the command: the default command itself, or the first step
+	 * of a configured one.
+	 * @return the step
+	 */
+	private JbBotBusiness getDecidingStep() {
 		try {
-			JbDefaultBotCommandStep valueOf = JbDefaultBotCommandStep.valueOf(this.name);
-			boolean visible = valueOf.isVisible(json);
-			return visible;
-			
-		} catch (Exception e) {
+			JbDefaultBotCommandStep defaultCommand = JbDefaultBotCommandStep.valueOf(this.name);
+			return defaultCommand;
+		} catch (IllegalArgumentException e) {
 			JbBotBusiness firstStep = JbBotEngine.INSTANCE.allSteps.get(this.name);
-			
-			boolean listed = firstStep.isVisible(json);
-			
-			return listed;
+			return firstStep;
 		}
 	}
 	

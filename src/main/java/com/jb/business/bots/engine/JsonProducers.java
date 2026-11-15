@@ -108,7 +108,10 @@ enum JsonProducers implements CcpBusiness{
 				return priorityCommand;
 			}
 			
-			CcpJsonRepresentation putSameValueInManyFields = json.putSameValueInManyFields(JbDefaultBotCommandStep.showAllCommands, JnJsonInstantMessengerFields.commandName,JnJsonInstantMessengerFields.stepName);
+			// the name, not the item: the steps read commandName as text (getCommandInProgress), and the item there broke
+			// them with a ClassCastException (until 2026-11-15)
+			String showAllCommands = JbDefaultBotCommandStep.showAllCommands.name();
+			CcpJsonRepresentation putSameValueInManyFields = json.putSameValueInManyFields(showAllCommands, JnJsonInstantMessengerFields.commandName,JnJsonInstantMessengerFields.stepName);
 			return putSameValueInManyFields;
 		}
 	},

@@ -12,9 +12,9 @@ import com.jn.json.fields.validation.JnJsonInstantMessengerFields;
 import com.jn.mensageria.JnFunctionMensageriaSender;
 
 /**
- * Handles an update pushed by the instant messenger, which reaches the bot through the webhook instead of the reading of
- * {@code JbInstantMessengerMessageReader}: it leaves the update in the same simplified form that reader produces and hands
- * it to the bot. The two ways share the offset of the bot in {@link JbEntityBotUpdateId}.
+ * Handles an update pushed by the instant messenger, which reaches the bot through the webhook (the reading by polling,
+ * {@code jb_instant-messenger-listener_jobsnow_dependency-chooser}, was removed on 2026-11-15): it leaves the update in a
+ * simplified form and hands it to the bot. The offset of the bot is kept in {@link JbEntityBotUpdateId}.
  * <p>
  * Since 2026-11-04 this business runs in the consumer of its own topic and only dispatches: it finds the command that
  * handles the message ({@code Bot.getCommandNameOf}) and publishes the message to the queue of that command of that bot

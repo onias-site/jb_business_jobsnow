@@ -191,6 +191,15 @@ class BotCommandStep implements JbBotBusiness{
 
 			CcpJsonRepresentation endMessagesResult = bot.sendMessage(engineResult, this.endMessages);
 
+			// a default command (/sair, /definirIdioma, /explicarEsteComando...) runs inside the session of the command in
+			// progress, which it leaves as it is (/sair removes it by itself): ending "its" session would end that one.
+			// Until 2026-11-15 this delete missed, the id calculated over the chatId as a double
+			boolean defaultCommand = this.engine instanceof JbDefaultBotCommandStep;
+
+			if(defaultCommand) {
+				return endMessagesResult;
+			}
+
 			boolean hasMoreSteps = conditionIfHasMoreSession.test(endMessagesResult);
 			CcpJsonRepresentation result = endMessagesResult.getTransformedJsonConsideringIfAnyOfTheConditionsIsMet(updateSession, JbDefaultBotCommandStep.removeSession, conditionIfHasMoreSession);
 
